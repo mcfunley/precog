@@ -6,8 +6,8 @@ from util import locked_file, is_fresh, touch, run_cmd
 from requests_oauthlib import OAuth2Session
 from requests import get
 
-github_client_id = r'e62e0d541bb6d0125b62'
-github_client_secret = r'1f488407e92a59beb897814e9240b5a06a2020e3'
+github_client_id = environ['GITHUB_CLIENT_ID'] or r'e62e0d541bb6d0125b62'
+github_client_secret = environ['GITHUB_CLIENT_SECRET'] or r'1f488407e92a59beb897814e9240b5a06a2020e3'
 
 jlogger = getLogger('jekit')
 
