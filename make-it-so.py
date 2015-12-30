@@ -15,7 +15,6 @@ from href import needs_redirect, get_redirect
 from util import get_directory_response
 from util import get_file_response
 from util import errors_logged
-from jekyll import jekyll_build
 
 from git import github_client_id, github_client_secret
 flask_secret_key = 'poop'
@@ -262,7 +261,9 @@ def repo_ref_slash(account, repo, ref):
         return make_redirect()
     
     try:
-        site_path = jekyll_build(prepare_git_checkout(account, repo, ref, token=get_token()))
+        import requests; from util import get_circle_artifacts
+        artifacts = get_circle_artifacts(account, repo, ref, get_token())
+        return requests.get(artifacts['index.html']).content
     except MissingRepoException:
         return make_404_response('no-such-repo.html', dict(account=account, repo=repo))
     except MissingRefException:
@@ -283,7 +284,9 @@ def repo_ref_path(account, repo, ref, path):
         return make_redirect()
 
     try:
-        site_path = jekyll_build(prepare_git_checkout(account, repo, ref, token=get_token()))
+        import requests; from util import get_circle_artifacts
+        artifacts = get_circle_artifacts(account, repo, ref, get_token())
+        return requests.get(artifacts[path]).content
     except MissingRepoException:
         return make_404_response('no-such-repo.html', dict(account=account, repo=repo))
     except MissingRefException:
