@@ -145,7 +145,7 @@ def get_circle_artifacts(owner, repo, ref, github_token):
     '''
     import requests, urlparse, os.path
     
-    circle_token = 'a17131792f4c4bcb97f2f66d9c58258a0ee0e621'
+    circle_token = environ.get('CIRCLECI_TOKEN') or 'a17131792f4c4bcb97f2f66d9c58258a0ee0e621'
     
     github_auth = github_token.get('access_token'), 'x-oauth-basic'
     status_url = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'.format(**locals())
