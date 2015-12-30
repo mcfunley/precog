@@ -261,7 +261,7 @@ def repo_ref_slash(account, repo, ref):
         return make_redirect()
     
     try:
-        import requests; from util import get_circle_artifacts
+        import requests; from git import get_circle_artifacts
         artifacts = get_circle_artifacts(account, repo, ref, get_token())
         return requests.get(artifacts['index.html']).content
     except MissingRepoException:
@@ -284,7 +284,7 @@ def repo_ref_path(account, repo, ref, path):
         return make_redirect()
 
     try:
-        import requests; from util import get_circle_artifacts
+        import requests; from git import get_circle_artifacts
         artifacts = get_circle_artifacts(account, repo, ref, get_token())
         return requests.get(artifacts[path]).content
     except MissingRepoException:
