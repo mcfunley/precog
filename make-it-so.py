@@ -286,7 +286,8 @@ def repo_ref_path(account, repo, ref, path):
     try:
         import requests; from git import get_circle_artifacts
         artifacts = get_circle_artifacts(account, repo, ref, get_token())
-        return requests.get(artifacts[path]).content
+        url = artifacts.get(path) or artifacts.get('{}/index.html'.format(path.rstrip('/')))
+        return requests.get(url).content
     except MissingRepoException:
         return make_404_response('no-such-repo.html', dict(account=account, repo=repo))
     except MissingRefException:
