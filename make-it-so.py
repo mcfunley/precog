@@ -9,7 +9,7 @@ from flask import Flask, redirect, request, make_response, render_template, sess
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import prepare_git_checkout, PrivateRepoException
+from git import PrivateRepoException
 from git import MissingRepoException, MissingRefException
 from href import needs_redirect, get_redirect
 from util import get_directory_response
