@@ -41,23 +41,26 @@ def repo_exists(owner, repo, access_token):
     
     return bool(repo_resp.status_code == 200)
 
-def find_branch(owner, repo, path, access_token):
-    ''' Return existing branch name for a given path - it might contain slashes.
+def split_branch_path(owner, repo, path, access_token):
+    ''' Return existing branch name and remaining path for a given path.
+        
+        Branch name might contain slashes.
     '''
     github_auth = access_token, 'x-oauth-basic'
-    parts = path.split('/')
+    branch_parts, path_parts = [], path.split('/')
     
-    while parts:
-        ref = '/'.join(parts)
+    while path_parts:
+        branch_parts.append(path_parts.pop(0))
+    
+        ref = '/'.join(branch_parts)
         ref_url = _GITHUB_REPO_REF_URL.format(owner=owner, repo=repo, ref=ref)
         ref_resp = requests.get(ref_url, auth=github_auth)
+        print ref_url, ref_resp.status_code
         
         if ref_resp.status_code == 200:
-            return ref
+            return ref, '/'.join(path_parts)
 
-        parts.pop()
-    
-    return None
+    return None, path
 
 def get_circle_artifacts(owner, repo, ref, github_token):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.
@@ -168,13 +171,13 @@ class TestGit (unittest.TestCase):
             self.assertFalse(repo_exists('migurski', 'no-repo', {}))
             self.assertTrue(repo_exists('migurski', 'circlejek', {}))
     
-    def test_find_branch(self):
+    def test_split_branch_path(self):
         with HTTMock(self.response_content):
-            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', {}), 'drew/dc-transit-events-2016')
-            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', {}), 'drew/dc-transit-events-2016')
-            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/', {}), 'drew/dc-transit-events-2016')
-            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016', {}), 'drew/dc-transit-events-2016')
-            self.assertIsNone(find_branch('mapzen', 'blog', 'drew', {}))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', {}), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', {}), ('drew/dc-transit-events-2016', 'blog/'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/', {}), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016', {}), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew', {}), (None, 'drew'))
     
     def test_existing_master(self):
         with HTTMock(self.response_content):
