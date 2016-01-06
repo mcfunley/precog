@@ -88,6 +88,17 @@ def get_circle_artifacts(owner, repo, ref, github_token):
     
     return artifacts
 
+def select_path(paths, path):
+    '''
+    '''
+    if path in paths:
+        return path
+    
+    if path == '':
+        return 'index.html'
+
+    return '{}/index.html'.format(path.rstrip('/'))
+
 #
 # Messy test crap.
 #
@@ -194,3 +205,8 @@ class TestGit (unittest.TestCase):
             with self.assertRaises(RuntimeError) as r:
                 get_circle_artifacts('migurski', 'circlejek', '4872caf32', {})
                 self.assertEqual(r.exception.message, ERR_PENDING_MESSAGE)
+    
+    def test_select_path(self):
+        self.assertEqual(select_path(tuple(), ''), 'index.html')
+        self.assertEqual(select_path(tuple(), 'foo'), 'foo/index.html')
+        self.assertEqual(select_path(('foo', ), 'foo'), 'foo')

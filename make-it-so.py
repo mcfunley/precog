@@ -10,7 +10,7 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import is_authenticated, repo_exists, split_branch_path, get_circle_artifacts
+from git import is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path
 from href import needs_redirect, get_redirect
 from util import errors_logged
 
@@ -260,18 +260,12 @@ def repo_ref_path(account, repo, ref_path):
         return make_404_response('no-such-ref.html', dict(ref=ref_path, **template_args))
     
     artifacts = get_circle_artifacts(account, repo, ref, get_token())
+    artifact_url = artifacts.get(select_path(artifacts, path))
     
-    if path in artifacts:
-        url = artifacts.get(path)
-    elif path == '':
-        url = artifacts.get('index.html')
-    else:
-        url = artifacts.get('{}/index.html'.format(path.rstrip('/')))
-    
-    if url is None:
+    if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
-    return requests.get(url).content
+    return requests.get(artifact_url).content
 
 @app.route('/<path:path>')
 @errors_logged
