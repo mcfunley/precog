@@ -6,11 +6,13 @@ from os import environ
 from time import time
 
 from flask import Flask, redirect, request, make_response, render_template, session
+import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
 from git import PrivateRepoException
 from git import MissingRepoException, MissingRefException
+from git import is_authenticated, repo_exists, split_branch_path, get_circle_artifacts
 from href import needs_redirect, get_redirect
 from util import get_directory_response
 from util import get_file_response
@@ -252,66 +254,35 @@ def repo_ref(account, repo, ref):
     
     return redirect('/%s/%s/%s/' % (account, repo, ref), 302)
 
-@app.route('/<account>/<repo>/<ref>/')
+@app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
-def repo_ref_slash(account, repo, ref):
-    ''' Show repository root directory listing.
-    '''
-    if should_redirect():
-        return make_redirect()
+def repo_ref_etc(account, repo, ref_path):
+    access_token = get_token().get('access_token')
+    template_args = dict(account=account, repo=repo)
     
-    try:
-        import requests; from git import get_circle_artifacts
-        artifacts = get_circle_artifacts(account, repo, ref, get_token())
-        return requests.get(artifacts['index.html']).content
-    except MissingRepoException:
-        return make_404_response('no-such-repo.html', dict(account=account, repo=repo))
-    except MissingRefException:
-        return make_404_response('no-such-ref.html', dict(account=account, repo=repo, ref=ref))
-    except PrivateRepoException:
+    if access_token is None or not is_authenticated(access_token):
         return make_401_response()
-    except RuntimeError, e:
-        return make_500_response(e, format_exc())
-
-    return get_directory_response(site_path)
-
-@app.route('/<account>/<repo>/<ref>/<path:path>')
-@errors_logged
-def repo_ref_path(account, repo, ref, path):
-    ''' Show response for a path, whether a file or directory.
-    '''
-    if should_redirect():
-        return make_redirect()
-
-    try:
-        import requests; from git import get_circle_artifacts
-        artifacts = get_circle_artifacts(account, repo, ref, get_token())
-        url = artifacts.get(path) or artifacts.get('{}/index.html'.format(path.rstrip('/')))
-        return requests.get(url).content
-    except MissingRepoException:
-        return make_404_response('no-such-repo.html', dict(account=account, repo=repo))
-    except MissingRefException:
-        return make_404_response('no-such-ref.html', dict(account=account, repo=repo, ref=ref))
-    except PrivateRepoException:
-        return make_401_response()
-    except RuntimeError, e:
-        return make_500_response(e, format_exc())
+    elif not repo_exists(account, repo, access_token):
+        return make_404_response('no-such-repo.html', template_args)
     
-    local_path = join(site_path, path)
+    ref, path = split_branch_path(account, repo, ref_path, access_token)
+    
+    if ref is None:
+        return make_404_response('no-such-ref.html', dict(ref=ref_path, **template_args))
+    
+    artifacts = get_circle_artifacts(account, repo, ref, get_token())
+    
+    if path in artifacts:
+        url = artifacts.get(path)
+    elif path == '':
+        url = artifacts.get('index.html')
+    else:
+        url = artifacts.get('{}/index.html'.format(path.rstrip('/')))
+    
+    if url is None:
+        return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
-    if isfile(local_path) and not isdir(local_path):
-        return get_file_response(local_path)
-    
-    if isdir(local_path) and not path.endswith('/'):
-        other = redirect('/%s/%s/%s/%s/' % (account, repo, ref, path), 302)
-        other.headers['Cache-Control'] = 'no-store private'
-        return other
-    
-    if isdir(local_path):
-        return get_directory_response(local_path)
-    
-    kwargs = dict(account=account, repo=repo, ref=ref, path=path)
-    return make_404_response('error-404.html', kwargs)
+    return requests.get(url).content
 
 @app.route('/<path:path>')
 @errors_logged
