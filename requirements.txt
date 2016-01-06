@@ -1,5 +1,5 @@
-flask
-requests
-requests-oauthlib
-gunicorn
+Flask==0.10.1
+requests==2.4.1
+requests-oauthlib==0.4.1
+gunicorn==19.1.1
 HTTMock==1.2.3

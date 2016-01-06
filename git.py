@@ -18,12 +18,6 @@ _GITHUB_REPO_REF_URL = 'https://api.github.com/repos/{owner}/{repo}/git/refs/hea
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
-class PrivateRepoException (Exception): pass
-
-class MissingRepoException (Exception): pass
-
-class MissingRefException (Exception): pass
-
 def is_authenticated(access_token):
     ''' Return True if given access token is valid for a Github user.
     '''
@@ -55,7 +49,6 @@ def split_branch_path(owner, repo, path, access_token):
         ref = '/'.join(branch_parts)
         ref_url = _GITHUB_REPO_REF_URL.format(owner=owner, repo=repo, ref=ref)
         ref_resp = requests.get(ref_url, auth=github_auth)
-        print ref_url, ref_resp.status_code
         
         if ref_resp.status_code == 200:
             return ref, '/'.join(path_parts)

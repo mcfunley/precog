@@ -10,12 +10,8 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import PrivateRepoException
-from git import MissingRepoException, MissingRefException
 from git import is_authenticated, repo_exists, split_branch_path, get_circle_artifacts
 from href import needs_redirect, get_redirect
-from util import get_directory_response
-from util import get_file_response
 from util import errors_logged
 
 from git import github_client_id, github_client_secret
@@ -51,13 +47,6 @@ def make_redirect():
     other.headers['Vary'] = 'Referer'
 
     return other
-
-def get_auth():
-    ''' Get (username, password) tuple from flask.request, or None.
-    '''
-    auth = request.authorization
-    
-    return (auth.username, auth.password) if auth else None
 
 def get_token():
     ''' Get OAuth token from flask.session, or a fake one guaranteed to fail.
@@ -256,7 +245,7 @@ def repo_ref(account, repo, ref):
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
-def repo_ref_etc(account, repo, ref_path):
+def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
     template_args = dict(account=account, repo=repo)
     
