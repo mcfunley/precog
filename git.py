@@ -37,6 +37,24 @@ def repo_exists(owner, repo, access_token):
     
     return bool(repo_resp.status_code == 200)
 
+def find_branch(owner, repo, path, access_token):
+    '''
+    '''
+    github_auth = access_token, 'x-oauth-basic'
+    parts = path.split('/')
+    
+    while parts:
+        ref = '/'.join(parts)
+        ref_url = 'https://api.github.com/repos/{owner}/{repo}/git/refs/heads/{ref}'.format(**locals())
+        ref_resp = requests.get(ref_url, auth=github_auth)
+        
+        if ref_resp.status_code == 200:
+            return ref
+
+        parts.pop()
+    
+    pass
+
 def get_circle_artifacts(owner, repo, ref, github_token):
     '''
     '''
@@ -100,8 +118,20 @@ class TestGit (unittest.TestCase):
             data = u'''[\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403320253,\r    "state": "success",\r    "description": "Your tests passed on CircleCI!",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/13",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T22:49:42Z",\r    "updated_at": "2015-12-30T22:49:42Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  },\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403319747,\r    "state": "pending",\r    "description": "CircleCI is running your tests",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/13",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T22:48:48Z",\r    "updated_at": "2015-12-30T22:48:48Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  },\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403319729,\r    "state": "pending",\r    "description": "Your tests are queued behind your running builds",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/13",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T22:48:47Z",\r    "updated_at": "2015-12-30T22:48:47Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  },\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403274989,\r    "state": "success",\r    "description": "Your tests passed on CircleCI!",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/12",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T21:38:53Z",\r    "updated_at": "2015-12-30T21:38:53Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  },\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403274443,\r    "state": "pending",\r    "description": "CircleCI is running your tests",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/12",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T21:38:00Z",\r    "updated_at": "2015-12-30T21:38:00Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  },\r  {\r    "url": "https://api.github.com/repos/migurski/circlejek/statuses/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r    "id": 403274434,\r    "state": "pending",\r    "description": "Your tests are queued behind your running builds",\r    "target_url": "https://circleci.com/gh/migurski/circlejek/12",\r    "context": "ci/circleci",\r    "created_at": "2015-12-30T21:37:59Z",\r    "updated_at": "2015-12-30T21:37:59Z",\r    "creator": {\r      "login": "migurski",\r      "id": 58730,\r      "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r      "gravatar_id": "",\r      "url": "https://api.github.com/users/migurski",\r      "html_url": "https://github.com/migurski",\r      "followers_url": "https://api.github.com/users/migurski/followers",\r      "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r      "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r      "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r      "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r      "organizations_url": "https://api.github.com/users/migurski/orgs",\r      "repos_url": "https://api.github.com/users/migurski/repos",\r      "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r      "received_events_url": "https://api.github.com/users/migurski/received_events",\r      "type": "User",\r      "site_admin": false\r    }\r  }\r]'''
             return response(200, data.encode('utf8'), headers=response_headers)
 
-        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/statuses/no-branch'):
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/statuses/untested'):
             data = u'''[\r\r]'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog/mapzen-in-dc') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog/') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew'):
+            data = u'''{\r  "message": "Not Found",\r  "documentation_url": "https://developer.github.com/v3"\r}'''
+            return response(404, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016'):
+            data = u'''{\r    "object": {\r        "sha": "d2bb1bd6ef04bb0a0542acc6d5e07e150c960118",\r        "type": "commit",\r        "url": "https://api.github.com/repos/mapzen/blog/git/commits/d2bb1bd6ef04bb0a0542acc6d5e07e150c960118"\r    },\r    "ref": "refs/heads/drew/dc-transit-events-2016",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016"\r}'''
             return response(200, data.encode('utf8'), headers=response_headers)
 
         if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek'):
@@ -136,15 +166,23 @@ class TestGit (unittest.TestCase):
             self.assertFalse(repo_exists('migurski', 'no-repo', {}))
             self.assertTrue(repo_exists('migurski', 'circlejek', {}))
     
+    def test_find_branch(self):
+        with HTTMock(self.response_content):
+            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', {}), 'drew/dc-transit-events-2016')
+            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', {}), 'drew/dc-transit-events-2016')
+            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016/', {}), 'drew/dc-transit-events-2016')
+            self.assertEqual(find_branch('mapzen', 'blog', 'drew/dc-transit-events-2016', {}), 'drew/dc-transit-events-2016')
+            self.assertIsNone(find_branch('mapzen', 'blog', 'drew', {}))
+    
     def test_existing_master(self):
         with HTTMock(self.response_content):
             artifacts = get_circle_artifacts('migurski', 'circlejek', 'master', {})
             self.assertIn('index.html', artifacts)
     
-    def test_nonexistent_branch(self):
+    def test_untested_branch(self):
         with HTTMock(self.response_content):
             with self.assertRaises(RuntimeError) as r:
-                get_circle_artifacts('migurski', 'circlejek', 'no-branch', {})
+                get_circle_artifacts('migurski', 'circlejek', 'untested', {})
                 self.assertEqual(r.exception.message, ERR_NO_REF_STATUS)
     
     def test_nonexistent_repository(self):
