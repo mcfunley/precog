@@ -19,6 +19,7 @@ ERR_NO_REF_STATUS = 'Missing statuses for ref'
 _GITHUB_USER_URL = 'https://api.github.com/user'
 _GITHUB_REPO_URL = 'https://api.github.com/repos/{owner}/{repo}'
 _GITHUB_REPO_REF_URL = 'https://api.github.com/repos/{owner}/{repo}/git/refs/heads/{ref}'
+_GITHUB_REPO_HEAD_URL = 'https://api.github.com/repos/{owner}/{repo}/git/{head}'
 _GITHUB_TREE_URL = 'https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}'
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
@@ -71,11 +72,23 @@ def split_branch_path(owner, repo, path, GET):
         branch_parts.append(path_parts.pop(0))
     
         ref = '/'.join(branch_parts)
-        ref_url = _GITHUB_REPO_REF_URL.format(owner=owner, repo=repo, ref=ref)
-        ref_resp = GET(ref_url)
+        head = 'refs/heads/{}'.format(ref)
+        head_url = _GITHUB_REPO_HEAD_URL.format(owner=owner, repo=repo, head=head)
+        head_resp = GET(head_url)
         
-        if ref_resp.status_code == 200:
-            return ref, '/'.join(path_parts)
+        if head_resp.status_code != 200:
+            # Not found at all.
+            continue
+        
+        if not hasattr(head_resp.json(), 'get'):
+            # There are more refs under this path, get more specific.
+            continue
+        
+        if head_resp.json().get('ref') != head:
+            # Found a single ref and it is wrong.
+            break
+            
+        return ref, '/'.join(path_parts)
 
     return None, path
 
@@ -186,9 +199,12 @@ class TestGit (unittest.TestCase):
         if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog/mapzen-in-dc') \
         or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog/') \
         or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/blog') \
-        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/') \
-        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew'):
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016/'):
             data = u'''{\r  "message": "Not Found",\r  "documentation_url": "https://developer.github.com/v3"\r}'''
+            return response(404, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew'):
+            data = u'''[\r  {\r    "ref": "refs/heads/drew/dc-transit-events-2016",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016",\r    "object": {\r      "sha": "8ee949969fe93f3cffa0e2f4d0e208fa848d4028",\r      "type": "commit",\r      "url": "https://api.github.com/repos/mapzen/blog/git/commits/8ee949969fe93f3cffa0e2f4d0e208fa848d4028"\r    }\r  },\r  {\r    "ref": "refs/heads/drew/period",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/period",\r    "object": {\r      "sha": "7b6a60ee7f70bc73a9866cf15aef9632470571ec",\r      "type": "commit",\r      "url": "https://api.github.com/repos/mapzen/blog/git/commits/7b6a60ee7f70bc73a9866cf15aef9632470571ec"\r    }\r  }\r]'''
             return response(404, data.encode('utf8'), headers=response_headers)
 
         if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016'):
