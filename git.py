@@ -32,22 +32,29 @@ class Getter:
         self.github_auth = github_auth
         self.responses = cache
     
+    def _flush(self):
+        ''' Flush past-deadline responses.
+        '''
+        for (k, (r, d)) in self.responses.items():
+            if (time() > d):
+                self.responses.pop(k)
+    
     def get(self, url):
+        self._flush()
+        
         host = urlparse(url).hostname
         auth = self.github_auth if (host == 'api.github.com') else None
         key = (url, auth)
         
         if key in self.responses:
-            response, deadline = self.responses[key]
-            if time() < deadline:
-                return response
+            return self.responses[key][0]
         
         if host == 'api.github.com':
             getLogger('jekit').warning('GET {}'.format(url))
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'))
         
-        self.responses[key] = resp, time() + 15
+        self.responses[key] = (resp, time() + 15)
         return resp
 
 def is_authenticated(GET):
