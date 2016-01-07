@@ -285,8 +285,11 @@ def repo_ref_path(account, repo, ref_path):
     if ref is None:
         return make_404_response('no-such-ref.html', dict(ref=ref_path, **template_args))
     
-    artifacts = get_circle_artifacts(account, repo, ref, GET)
-    artifact_url = artifacts.get(select_path(artifacts, path))
+    try:
+        artifacts = get_circle_artifacts(account, repo, ref, GET)
+        artifact_url = artifacts.get(select_path(artifacts, path))
+    except RuntimeError as err:
+        return make_response(render_template('error-runtime.html', error=err), 400)
     
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
