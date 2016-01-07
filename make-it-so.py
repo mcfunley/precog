@@ -294,8 +294,14 @@ def repo_ref_path(account, repo, ref_path):
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
-    content = GET(artifact_url).content
-    mimetype = GET(artifact_url).headers.get('Content-Type', '')
+    try:
+        artifact_resp = GET(artifact_url)
+        if artifact_resp.status_code != 200:
+            raise IOError('Bad response from CircleCI: HTTP {}'.format(artifact_resp.status_code))
+        content = artifact_resp.content
+        mimetype = artifact_resp.headers.get('Content-Type', '')
+    except IOError as err:
+        return make_response(render_template('error-runtime.html', error=err), 500)
     
     return Response(content, headers={'Content-Type': mimetype, 'Cache-Control': 'no-store private'})
 

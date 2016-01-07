@@ -52,7 +52,7 @@ class Getter:
         if host == 'api.github.com':
             getLogger('jekit').warning('GET {}'.format(url))
 
-        resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'))
+        resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
         self.responses[key] = (resp, time() + 15)
         return resp
