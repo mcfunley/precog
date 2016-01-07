@@ -2,6 +2,8 @@ from logging import DEBUG, INFO, getLogger, FileHandler, StreamHandler, Formatte
 from os.path import join, isdir, isfile
 from traceback import format_exc
 from urllib import urlencode
+from functools import wraps
+from urlparse import urlparse
 from os import environ
 from time import time
 
@@ -24,29 +26,63 @@ app.secret_key = flask_secret_key
 def adjust_log_level():
     getLogger('jekit').setLevel(DEBUG if app.debug else INFO)
 
-def should_redirect():
-    ''' Return True if the current flask.request should redirect.
-    '''
-    if request.args.get('go') == u'\U0001f44c':
-        return False
-    
-    referer_url = request.headers.get('Referer')
-    
-    if not referer_url:
-        return False
-    
-    return needs_redirect(request.host, request.path, referer_url)
-
-def make_redirect():
+def make_redirect(slash_count):
     ''' Return a flask.redirect for the current flask.request.
     '''
     referer_url = request.headers.get('Referer')
 
-    other = redirect(get_redirect(request.path, referer_url), 302)
+    other = redirect(get_redirect(request.path, referer_url, slash_count), 302)
     other.headers['Cache-Control'] = 'no-store private'
     other.headers['Vary'] = 'Referer'
 
     return other
+
+def handle_redirects(route_function):
+    '''
+    '''
+    @wraps(route_function)
+    def wrapper(*args, **kwargs):
+        GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
+        
+        # See if there's a referer at all.
+        referer_url = request.headers.get('Referer')
+        
+        if not referer_url:
+            # No referer, no redirect.
+            return route_function(*args, **kwargs)
+
+        # See if the referer path is long enough to suggest a redirect.
+        referer_path = urlparse(referer_url).path
+        split_path = referer_path.lstrip('/').split('/', 2)
+        
+        if len(split_path) != 3:
+            # Not long enough.
+            return route_function(*args, **kwargs)
+        
+        # Talk to Github about the path and find a ref name.
+        path_owner, path_repo, path_ref = split_path
+
+        if not repo_exists(path_owner, path_repo, GET):
+            # No repo by this name, no redirect.
+            return route_function(*args, **kwargs)
+        
+        ref, _ = split_branch_path(path_owner, path_repo, path_ref, GET)
+        
+        if ref is None:
+            # No ref identified, no redirect.
+            return route_function(*args, **kwargs)
+        
+        # Usually 3, but maybe more?
+        slash_count = 2 + len(ref.split('/'))
+        
+        # See if a redirect is necessary.
+        if needs_redirect(request.host, request.path, referer_url, slash_count):
+            return make_redirect(slash_count)
+        
+        # Otherwise, proceed as normal.
+        return route_function(*args, **kwargs)
+    
+    return wrapper
 
 def get_token():
     ''' Get OAuth token from flask.session, or a fake one guaranteed to fail.
@@ -94,10 +130,8 @@ def make_500_response(error, traceback):
 
 @app.route('/')
 @errors_logged
+@handle_redirects
 def hello_world():
-    if should_redirect():
-        return make_redirect()
-    
     id = session.get('id', None)
     
     script = '''
@@ -117,10 +151,8 @@ def hello_world():
 
 @app.route('/.well-known/status')
 @errors_logged
+@handle_redirects
 def wellknown_status():
-    if should_redirect():
-        return make_redirect()
-    
     status = '''
     {
       "status": "ok",
@@ -137,10 +169,8 @@ def wellknown_status():
 
 @app.route('/bookmarklet.js')
 @errors_logged
+@handle_redirects
 def bookmarklet_script():
-    if should_redirect():
-        return make_redirect()
-    
     js = open('scripts/bookmarklet.js').read()
 
     script = make_response(js.replace('host:port', request.host), 200)
@@ -215,36 +245,31 @@ def logout():
 
 @app.route('/<account>/<repo>')
 @errors_logged
+@handle_redirects
 def repo_only(account, repo):
     ''' Redirect to "master" on a hunch.
     '''
-    if should_redirect():
-        return make_redirect()
-    
     return redirect('/%s/%s/master/' % (account, repo), 302)
 
 @app.route('/<account>/<repo>/')
 @errors_logged
+@handle_redirects
 def repo_only_slash(account, repo):
     ''' Redirect to "master" on a hunch.
     '''
-    if should_redirect():
-        return make_redirect()
-    
     return redirect('/%s/%s/master/' % (account, repo), 302)
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged
+@handle_redirects
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
     '''
-    if should_redirect():
-        return make_redirect()
-    
     return redirect('/%s/%s/%s/' % (account, repo, ref), 302)
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
+@handle_redirects
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
     GET = Getter((access_token, 'x-oauth-basic')).get
@@ -270,11 +295,11 @@ def repo_ref_path(account, repo, ref_path):
 
 @app.route('/<path:path>')
 @errors_logged
+@handle_redirects
 def all_other_paths(path):
     '''
     '''
-    if should_redirect():
-        return make_redirect()
+    return 'Shrug.'
 
 if environ.get('app-logfile', None):
     handler = FileHandler(environ['app-logfile'])
