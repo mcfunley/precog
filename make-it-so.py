@@ -44,6 +44,17 @@ def handle_redirects(route_function):
     def wrapper(*args, **kwargs):
         GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
         
+        # Look for a missing trailing slash at the repository root.
+        split_req = request.path.lstrip('/').split('/', 2)
+        
+        if len(split_req) == 3:
+            req_owner, req_repo, req_ref_path = split_req
+            req_ref, req_path = split_branch_path(req_owner, req_repo, req_ref_path, GET)
+            
+            if req_path == '' and not req_ref_path.endswith('/'):
+                # Missing a trailing slash at the root of the repository.
+                return redirect('{}/'.format(request.path), 302)
+
         # See if there's a referer at all.
         referer_url = request.headers.get('Referer')
         
