@@ -1,5 +1,6 @@
 from os.path import relpath, join
 from urlparse import urlparse
+from logging import getLogger
 from base64 import b64decode
 from os import environ
 from time import time
@@ -41,6 +42,9 @@ class Getter:
             if time() < deadline:
                 return response
         
+        if host == 'api.github.com':
+            getLogger('jekit').warning('GET {}'.format(url))
+
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'))
         
         self.responses[key] = resp, time() + 15
