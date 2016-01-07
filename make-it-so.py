@@ -7,7 +7,7 @@ from urlparse import urlparse
 from os import environ
 from time import time
 
-from flask import Flask, redirect, request, make_response, render_template, session
+from flask import Flask, Response, redirect, request, make_response, render_template, session
 import requests
 
 from requests import post
@@ -291,7 +291,10 @@ def repo_ref_path(account, repo, ref_path):
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
-    return GET(artifact_url).content
+    content = GET(artifact_url).content
+    mimetype = GET(artifact_url).headers.get('Content-Type', '')
+    
+    return Response(content, headers={'Content-Type': mimetype, 'Cache-Control': 'no-store private'})
 
 @app.route('/<path:path>')
 @errors_logged
