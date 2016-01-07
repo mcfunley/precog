@@ -22,29 +22,38 @@ _GITHUB_TREE_URL = 'https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}'
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
-def is_authenticated(access_token):
-    ''' Return True if given access token is valid for a Github user.
+class Getter:
+    ''' Wrapper for HTTP GET from requests.
     '''
-    github_auth = access_token, 'x-oauth-basic'
-    user_resp = requests.get(_GITHUB_USER_URL, auth=github_auth)
+    def __init__(self, github_auth):
+        self.github_auth = github_auth
+    
+    def get(self, url):
+        host = urlparse(url).hostname
+        auth = self.github_auth if (host == 'api.github.com') else None
+        
+        return requests.get(url, auth=auth, headers=dict(Accept='application/json'))
+
+def is_authenticated(GET):
+    ''' Return True if given username/password is valid for a Github user.
+    '''
+    user_resp = GET(_GITHUB_USER_URL)
     
     return bool(user_resp.status_code == 200)
 
-def repo_exists(owner, repo, access_token):
+def repo_exists(owner, repo, GET):
     ''' Return True if given owner/repo exists in Github.
     '''
-    github_auth = access_token, 'x-oauth-basic'
     repo_url = _GITHUB_REPO_URL.format(owner=owner, repo=repo)
-    repo_resp = requests.get(repo_url, auth=github_auth)
+    repo_resp = GET(repo_url)
     
     return bool(repo_resp.status_code == 200)
 
-def split_branch_path(owner, repo, path, access_token):
+def split_branch_path(owner, repo, path, GET):
     ''' Return existing branch name and remaining path for a given path.
         
         Branch name might contain slashes.
     '''
-    github_auth = access_token, 'x-oauth-basic'
     branch_parts, path_parts = [], path.split('/')
     
     while path_parts:
@@ -52,20 +61,18 @@ def split_branch_path(owner, repo, path, access_token):
     
         ref = '/'.join(branch_parts)
         ref_url = _GITHUB_REPO_REF_URL.format(owner=owner, repo=repo, ref=ref)
-        ref_resp = requests.get(ref_url, auth=github_auth)
+        ref_resp = GET(ref_url)
         
         if ref_resp.status_code == 200:
             return ref, '/'.join(path_parts)
 
     return None, path
 
-def find_base_path(owner, repo, ref, access_token):
+def find_base_path(owner, repo, ref, GET):
     ''' Return artifacts base path after reading Circle config.
     '''
-    github_auth = access_token, 'x-oauth-basic'
-
     tree_url = _GITHUB_TREE_URL.format(owner=owner, repo=repo, ref=ref)
-    tree_resp = requests.get(tree_url, auth=github_auth)
+    tree_resp = GET(tree_url)
     
     paths = {item['path']: item['url'] for item in tree_resp.json()['tree']}
     
@@ -73,7 +80,7 @@ def find_base_path(owner, repo, ref, access_token):
         return '$CIRCLE_ARTIFACTS'
     
     blob_url = paths['circle.yml']
-    blob_resp = requests.get(blob_url, auth=github_auth)
+    blob_resp = GET(blob_url)
     blob_yaml = b64decode(blob_resp.json()['content'])
     circle_config = yaml.load(blob_yaml)
     
@@ -84,14 +91,13 @@ def find_base_path(owner, repo, ref, access_token):
     
     return join('/home/ubuntu/{}/'.format(repo), paths[0])
 
-def get_circle_artifacts(owner, repo, ref, github_token):
+def get_circle_artifacts(owner, repo, ref, GET):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.
     '''
     circle_token = environ.get('CIRCLECI_TOKEN') or 'a17131792f4c4bcb97f2f66d9c58258a0ee0e621'
     
-    github_auth = github_token.get('access_token'), 'x-oauth-basic'
     status_url = _GITHUB_STATUS_URL.format(owner=owner, repo=repo, ref=ref)
-    status_resp = requests.get(status_url, auth=github_auth)
+    status_resp = GET(status_url)
     
     if status_resp.status_code == 404:
         raise RuntimeError(ERR_NO_REPOSITORY)
@@ -113,10 +119,10 @@ def get_circle_artifacts(owner, repo, ref, github_token):
     circle_url = status['target_url'] if (status['state'] == 'success') else None
     circle_build = relpath(urlparse(circle_url).path, '/gh/')
 
-    artifacts_base = find_base_path(owner, repo, ref, github_auth[0])
+    artifacts_base = find_base_path(owner, repo, ref, GET)
     artifacts_url = _CIRCLECI_ARTIFACTS_URL.format(build=circle_build, token=circle_token)
     artifacts = {relpath(a['pretty_path'], artifacts_base): '{}?circle-token={}'.format(a['url'], circle_token)
-                 for a in requests.get(artifacts_url, headers=dict(Accept='application/json')).json()}
+                 for a in GET(artifacts_url).json()}
     
     return artifacts
 
@@ -138,6 +144,9 @@ import unittest
 from httmock import HTTMock, response
 
 class TestGit (unittest.TestCase):
+
+    def setUp(self):
+        self.GET = Getter(tuple()).get
 
     def response_content(self, url, request):
         '''
@@ -219,54 +228,54 @@ class TestGit (unittest.TestCase):
     
     def test_authenticated_user(self):
         with HTTMock(self.response_content):
-            self.assertFalse(is_authenticated('invalid'))
-            self.assertTrue(is_authenticated('valid'))
+            self.assertFalse(is_authenticated(Getter(('invalid', 'x-oauth-basic')).get))
+            self.assertTrue(is_authenticated(Getter(('valid', 'x-oauth-basic')).get))
     
     def test_existing_repo(self):
         with HTTMock(self.response_content):
-            self.assertFalse(repo_exists('migurski', 'no-repo', {}))
-            self.assertTrue(repo_exists('migurski', 'circlejek', {}))
+            self.assertFalse(repo_exists('migurski', 'no-repo', self.GET))
+            self.assertTrue(repo_exists('migurski', 'circlejek', self.GET))
     
     def test_split_branch_path(self):
         with HTTMock(self.response_content):
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', None), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', None), ('drew/dc-transit-events-2016', 'blog/'))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/', None), ('drew/dc-transit-events-2016', ''))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016', None), ('drew/dc-transit-events-2016', ''))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew', None), (None, 'drew'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', self.GET), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', self.GET), ('drew/dc-transit-events-2016', 'blog/'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/', self.GET), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016', self.GET), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew', self.GET), (None, 'drew'))
     
     def test_find_base_path(self):
         with HTTMock(self.response_content):
-            self.assertEqual(find_base_path('migurski', 'circlejek', 'master', None), '$CIRCLE_ARTIFACTS')
-            self.assertEqual(find_base_path('migurski', 'circlejek', 'tinker-with-config', None), '/home/ubuntu/circlejek/_site')
+            self.assertEqual(find_base_path('migurski', 'circlejek', 'master', self.GET), '$CIRCLE_ARTIFACTS')
+            self.assertEqual(find_base_path('migurski', 'circlejek', 'tinker-with-config', self.GET), '/home/ubuntu/circlejek/_site')
     
     def test_existing_master(self):
         with HTTMock(self.response_content):
-            artifacts = get_circle_artifacts('migurski', 'circlejek', 'master', {})
+            artifacts = get_circle_artifacts('migurski', 'circlejek', 'master', self.GET)
             self.assertIn('index.html', artifacts)
     
     def test_untested_branch(self):
         with HTTMock(self.response_content):
             with self.assertRaises(RuntimeError) as r:
-                get_circle_artifacts('migurski', 'circlejek', 'untested', {})
+                get_circle_artifacts('migurski', 'circlejek', 'untested', self.GET)
             self.assertEqual(r.exception.message, ERR_NO_REF_STATUS)
     
     def test_nonexistent_repository(self):
         with HTTMock(self.response_content):
             with self.assertRaises(RuntimeError) as r:
-                get_circle_artifacts('migurski', 'no-repo', 'master', {})
+                get_circle_artifacts('migurski', 'no-repo', 'master', self.GET)
             self.assertEqual(r.exception.message, ERR_NO_REPOSITORY)
     
     def test_unfinished_test(self):
         with HTTMock(self.response_content):
             with self.assertRaises(RuntimeError) as r:
-                get_circle_artifacts('migurski', 'circlejek', '4872caf32', {})
+                get_circle_artifacts('migurski', 'circlejek', '4872caf32', self.GET)
             self.assertEqual(r.exception.message, ERR_TESTS_PENDING)
     
     def test_failed_test(self):
         with HTTMock(self.response_content):
             with self.assertRaises(RuntimeError) as r:
-                get_circle_artifacts('migurski', 'circlejek', 'd6f1c445e', {})
+                get_circle_artifacts('migurski', 'circlejek', 'd6f1c445e', self.GET)
             self.assertEqual(r.exception.message, ERR_TESTS_FAILED)
     
     def test_select_path(self):

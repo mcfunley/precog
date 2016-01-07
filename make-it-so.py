@@ -10,7 +10,7 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path
+from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path
 from href import needs_redirect, get_redirect
 from util import errors_logged
 
@@ -247,19 +247,20 @@ def repo_ref(account, repo, ref):
 @errors_logged
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
     
-    if access_token is None or not is_authenticated(access_token):
+    if access_token is None or not is_authenticated(GET):
         return make_401_response()
-    elif not repo_exists(account, repo, access_token):
+    elif not repo_exists(account, repo, GET):
         return make_404_response('no-such-repo.html', template_args)
     
-    ref, path = split_branch_path(account, repo, ref_path, access_token)
+    ref, path = split_branch_path(account, repo, ref_path, GET)
     
     if ref is None:
         return make_404_response('no-such-ref.html', dict(ref=ref_path, **template_args))
     
-    artifacts = get_circle_artifacts(account, repo, ref, get_token())
+    artifacts = get_circle_artifacts(account, repo, ref, GET)
     artifact_url = artifacts.get(select_path(artifacts, path))
     
     if artifact_url is None:
