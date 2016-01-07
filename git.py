@@ -2,6 +2,7 @@ from os.path import relpath, join
 from urlparse import urlparse
 from base64 import b64decode
 from os import environ
+from time import time
 
 from requests_oauthlib import OAuth2Session
 import requests
@@ -25,14 +26,24 @@ _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
-    def __init__(self, github_auth):
+    def __init__(self, github_auth, cache={}):
         self.github_auth = github_auth
+        self.responses = cache
     
     def get(self, url):
         host = urlparse(url).hostname
         auth = self.github_auth if (host == 'api.github.com') else None
+        key = (url, auth)
         
-        return requests.get(url, auth=auth, headers=dict(Accept='application/json'))
+        if key in self.responses:
+            response, deadline = self.responses[key]
+            if time() < deadline:
+                return response
+        
+        resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'))
+        
+        self.responses[key] = resp, time() + 15
+        return resp
 
 def is_authenticated(GET):
     ''' Return True if given username/password is valid for a Github user.
@@ -146,7 +157,7 @@ from httmock import HTTMock, response
 class TestGit (unittest.TestCase):
 
     def setUp(self):
-        self.GET = Getter(tuple()).get
+        self.GET = Getter(tuple(), dict()).get
 
     def response_content(self, url, request):
         '''

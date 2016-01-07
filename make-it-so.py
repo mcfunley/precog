@@ -266,7 +266,7 @@ def repo_ref_path(account, repo, ref_path):
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
-    return requests.get(artifact_url).content
+    return GET(artifact_url).content
 
 @app.route('/<path:path>')
 @errors_logged
