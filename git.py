@@ -209,7 +209,7 @@ class TestGit (unittest.TestCase):
 
         if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew'):
             data = u'''[\r  {\r    "ref": "refs/heads/drew/dc-transit-events-2016",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016",\r    "object": {\r      "sha": "8ee949969fe93f3cffa0e2f4d0e208fa848d4028",\r      "type": "commit",\r      "url": "https://api.github.com/repos/mapzen/blog/git/commits/8ee949969fe93f3cffa0e2f4d0e208fa848d4028"\r    }\r  },\r  {\r    "ref": "refs/heads/drew/period",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/period",\r    "object": {\r      "sha": "7b6a60ee7f70bc73a9866cf15aef9632470571ec",\r      "type": "commit",\r      "url": "https://api.github.com/repos/mapzen/blog/git/commits/7b6a60ee7f70bc73a9866cf15aef9632470571ec"\r    }\r  }\r]'''
-            return response(404, data.encode('utf8'), headers=response_headers)
+            return response(200, data.encode('utf8'), headers=response_headers)
 
         if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016'):
             data = u'''{\r    "object": {\r        "sha": "d2bb1bd6ef04bb0a0542acc6d5e07e150c960118",\r        "type": "commit",\r        "url": "https://api.github.com/repos/mapzen/blog/git/commits/d2bb1bd6ef04bb0a0542acc6d5e07e150c960118"\r    },\r    "ref": "refs/heads/drew/dc-transit-events-2016",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016"\r}'''
