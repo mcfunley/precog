@@ -1,9 +1,11 @@
-from os.path import relpath
+from os.path import relpath, join
 from urlparse import urlparse
+from base64 import b64decode
 from os import environ
 
 from requests_oauthlib import OAuth2Session
 import requests
+import yaml
 
 github_client_id = environ.get('GITHUB_CLIENT_ID') or r'e62e0d541bb6d0125b62'
 github_client_secret = environ.get('GITHUB_CLIENT_SECRET') or r'1f488407e92a59beb897814e9240b5a06a2020e3'
@@ -16,6 +18,7 @@ ERR_NO_REF_STATUS = 'Missing statuses for ref'
 _GITHUB_USER_URL = 'https://api.github.com/user'
 _GITHUB_REPO_URL = 'https://api.github.com/repos/{owner}/{repo}'
 _GITHUB_REPO_REF_URL = 'https://api.github.com/repos/{owner}/{repo}/git/refs/heads/{ref}'
+_GITHUB_TREE_URL = 'https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}'
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
@@ -56,6 +59,31 @@ def split_branch_path(owner, repo, path, access_token):
 
     return None, path
 
+def find_base_path(owner, repo, ref, access_token):
+    ''' Return artifacts base path after reading Circle config.
+    '''
+    github_auth = access_token, 'x-oauth-basic'
+
+    tree_url = _GITHUB_TREE_URL.format(owner=owner, repo=repo, ref=ref)
+    tree_resp = requests.get(tree_url, auth=github_auth)
+    
+    paths = {item['path']: item['url'] for item in tree_resp.json()['tree']}
+    
+    if 'circle.yml' not in paths:
+        return '$CIRCLE_ARTIFACTS'
+    
+    blob_url = paths['circle.yml']
+    blob_resp = requests.get(blob_url, auth=github_auth)
+    blob_yaml = b64decode(blob_resp.json()['content'])
+    circle_config = yaml.load(blob_yaml)
+    
+    paths = circle_config.get('general', {}).get('artifacts', [])
+    
+    if not paths:
+        return '$CIRCLE_ARTIFACTS'
+    
+    return join('/home/ubuntu/{}/'.format(repo), paths[0])
+
 def get_circle_artifacts(owner, repo, ref, github_token):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.
     '''
@@ -85,8 +113,9 @@ def get_circle_artifacts(owner, repo, ref, github_token):
     circle_url = status['target_url'] if (status['state'] == 'success') else None
     circle_build = relpath(urlparse(circle_url).path, '/gh/')
 
+    artifacts_base = find_base_path(owner, repo, ref, github_auth[0])
     artifacts_url = _CIRCLECI_ARTIFACTS_URL.format(build=circle_build, token=circle_token)
-    artifacts = {relpath(a['pretty_path'], '$CIRCLE_ARTIFACTS'): '{}?circle-token={}'.format(a['url'], circle_token)
+    artifacts = {relpath(a['pretty_path'], artifacts_base): '{}?circle-token={}'.format(a['url'], circle_token)
                  for a in requests.get(artifacts_url, headers=dict(Accept='application/json')).json()}
     
     return artifacts
@@ -146,6 +175,22 @@ class TestGit (unittest.TestCase):
             data = u'''{\r    "object": {\r        "sha": "d2bb1bd6ef04bb0a0542acc6d5e07e150c960118",\r        "type": "commit",\r        "url": "https://api.github.com/repos/mapzen/blog/git/commits/d2bb1bd6ef04bb0a0542acc6d5e07e150c960118"\r    },\r    "ref": "refs/heads/drew/dc-transit-events-2016",\r    "url": "https://api.github.com/repos/mapzen/blog/git/refs/heads/drew/dc-transit-events-2016"\r}'''
             return response(200, data.encode('utf8'), headers=response_headers)
 
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/trees/master'):
+            data = u'''{\r  "sha": "4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/trees/4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "tree": [\r    {\r      "path": "Gemfile",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "e8a7006386e7ce6b8920b6d6e4283d0d833455d8",\r      "size": 44,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/e8a7006386e7ce6b8920b6d6e4283d0d833455d8"\r    },\r    {\r      "path": "_config.yml",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "2701f62dc8b87aa6770518de051a938e7aa4e0fa",\r      "size": 53,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/2701f62dc8b87aa6770518de051a938e7aa4e0fa"\r    },\r    {\r      "path": "circle.yml",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "52184fb8556ceb99165444a3388867e6664386d0",\r      "size": 106,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/52184fb8556ceb99165444a3388867e6664386d0"\r    },\r    {\r      "path": "goodbye.md",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "2e4003d64f16a43a6d1e03de11c94b48e02fb1ff",\r      "size": 39,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/2e4003d64f16a43a6d1e03de11c94b48e02fb1ff"\r    },\r    {\r      "path": "index.md",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "67e14c453494b9e4ee84b4d393a4ef5854ca9b33",\r      "size": 41,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/67e14c453494b9e4ee84b4d393a4ef5854ca9b33"\r    }\r  ],\r  "truncated": false\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/blobs/52184fb8556ceb99165444a3388867e6664386d0'):
+            data = u'''{\r  "sha": "52184fb8556ceb99165444a3388867e6664386d0",\r  "size": 106,\r  "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/52184fb8556ceb99165444a3388867e6664386d0",\r  "content": "bWFjaGluZToKICBydWJ5OgogICAgdmVyc2lvbjogMi4yLjMKdGVzdDoKICBv\\ndmVycmlkZToKICAgIC0gYnVuZGxlIGV4ZWMgamVreWxsIGJ1aWxkIC1kICRD\\nSVJDTEVfQVJUSUZBQ1RTCg==\\n",\r  "encoding": "base64"\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/trees/tinker-with-config'):
+            data = u'''{\r  "sha": "3c6431c3c1fa730b792bc039877623ef60435a77",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/trees/3c6431c3c1fa730b792bc039877623ef60435a77",\r  "tree": [\r    {\r      "path": "Gemfile",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "e8a7006386e7ce6b8920b6d6e4283d0d833455d8",\r      "size": 44,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/e8a7006386e7ce6b8920b6d6e4283d0d833455d8"\r    },\r    {\r      "path": "_config.yml",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "2701f62dc8b87aa6770518de051a938e7aa4e0fa",\r      "size": 53,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/2701f62dc8b87aa6770518de051a938e7aa4e0fa"\r    },\r    {\r      "path": "circle.yml",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "8bcc4f764bf2213d8fdfc34395e80abce9866e5d",\r      "size": 195,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/8bcc4f764bf2213d8fdfc34395e80abce9866e5d"\r    },\r    {\r      "path": "goodbye.md",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "2e4003d64f16a43a6d1e03de11c94b48e02fb1ff",\r      "size": 39,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/2e4003d64f16a43a6d1e03de11c94b48e02fb1ff"\r    },\r    {\r      "path": "index.md",\r      "mode": "100644",\r      "type": "blob",\r      "sha": "67e14c453494b9e4ee84b4d393a4ef5854ca9b33",\r      "size": 41,\r      "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/67e14c453494b9e4ee84b4d393a4ef5854ca9b33"\r    }\r  ],\r  "truncated": false\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/blobs/8bcc4f764bf2213d8fdfc34395e80abce9866e5d'):
+            data = u'''{\r  "sha": "8bcc4f764bf2213d8fdfc34395e80abce9866e5d",\r  "size": 195,\r  "url": "https://api.github.com/repos/migurski/circlejek/git/blobs/8bcc4f764bf2213d8fdfc34395e80abce9866e5d",\r  "content": "bWFjaGluZToKICBydWJ5OgogICAgdmVyc2lvbjogMi4yLjMKdGVzdDoKICBv\\ndmVycmlkZToKICAgIC0gYnVuZGxlIGV4ZWMgamVreWxsIGJ1aWxkCiAgICAt\\nIGNwIC0tcmVjdXJzaXZlIC0tbm8tdGFyZ2V0LWRpcmVjdG9yeSAtLWxpbmsg\\nX3NpdGUgJENJUkNMRV9BUlRJRkFDVFMKZ2VuZXJhbDoKICBhcnRpZmFjdHM6\\nCiAgICAtICJfc2l0ZSIK\\n",\r  "encoding": "base64"\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
         if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek'):
             data = u'''{\r  "id": 48819185,\r  "name": "circlejek",\r  "full_name": "migurski/circlejek",\r  "owner": {\r    "login": "migurski",\r    "id": 58730,\r    "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r    "gravatar_id": "",\r    "url": "https://api.github.com/users/migurski",\r    "html_url": "https://github.com/migurski",\r    "followers_url": "https://api.github.com/users/migurski/followers",\r    "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r    "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r    "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r    "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r    "organizations_url": "https://api.github.com/users/migurski/orgs",\r    "repos_url": "https://api.github.com/users/migurski/repos",\r    "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r    "received_events_url": "https://api.github.com/users/migurski/received_events",\r    "type": "User",\r    "site_admin": false\r  },\r  "private": false,\r  "html_url": "https://github.com/migurski/circlejek",\r  "description": "",\r  "fork": false,\r  "url": "https://api.github.com/repos/migurski/circlejek",\r  "forks_url": "https://api.github.com/repos/migurski/circlejek/forks",\r  "keys_url": "https://api.github.com/repos/migurski/circlejek/keys{/key_id}",\r  "collaborators_url": "https://api.github.com/repos/migurski/circlejek/collaborators{/collaborator}",\r  "teams_url": "https://api.github.com/repos/migurski/circlejek/teams",\r  "hooks_url": "https://api.github.com/repos/migurski/circlejek/hooks",\r  "issue_events_url": "https://api.github.com/repos/migurski/circlejek/issues/events{/number}",\r  "events_url": "https://api.github.com/repos/migurski/circlejek/events",\r  "assignees_url": "https://api.github.com/repos/migurski/circlejek/assignees{/user}",\r  "branches_url": "https://api.github.com/repos/migurski/circlejek/branches{/branch}",\r  "tags_url": "https://api.github.com/repos/migurski/circlejek/tags",\r  "blobs_url": "https://api.github.com/repos/migurski/circlejek/git/blobs{/sha}",\r  "git_tags_url": "https://api.github.com/repos/migurski/circlejek/git/tags{/sha}",\r  "git_refs_url": "https://api.github.com/repos/migurski/circlejek/git/refs{/sha}",\r  "trees_url": "https://api.github.com/repos/migurski/circlejek/git/trees{/sha}",\r  "statuses_url": "https://api.github.com/repos/migurski/circlejek/statuses/{sha}",\r  "languages_url": "https://api.github.com/repos/migurski/circlejek/languages",\r  "stargazers_url": "https://api.github.com/repos/migurski/circlejek/stargazers",\r  "contributors_url": "https://api.github.com/repos/migurski/circlejek/contributors",\r  "subscribers_url": "https://api.github.com/repos/migurski/circlejek/subscribers",\r  "subscription_url": "https://api.github.com/repos/migurski/circlejek/subscription",\r  "commits_url": "https://api.github.com/repos/migurski/circlejek/commits{/sha}",\r  "git_commits_url": "https://api.github.com/repos/migurski/circlejek/git/commits{/sha}",\r  "comments_url": "https://api.github.com/repos/migurski/circlejek/comments{/number}",\r  "issue_comment_url": "https://api.github.com/repos/migurski/circlejek/issues/comments{/number}",\r  "contents_url": "https://api.github.com/repos/migurski/circlejek/contents/{+path}",\r  "compare_url": "https://api.github.com/repos/migurski/circlejek/compare/{base}...{head}",\r  "merges_url": "https://api.github.com/repos/migurski/circlejek/merges",\r  "archive_url": "https://api.github.com/repos/migurski/circlejek/{archive_format}{/ref}",\r  "downloads_url": "https://api.github.com/repos/migurski/circlejek/downloads",\r  "issues_url": "https://api.github.com/repos/migurski/circlejek/issues{/number}",\r  "pulls_url": "https://api.github.com/repos/migurski/circlejek/pulls{/number}",\r  "milestones_url": "https://api.github.com/repos/migurski/circlejek/milestones{/number}",\r  "notifications_url": "https://api.github.com/repos/migurski/circlejek/notifications{?since,all,participating}",\r  "labels_url": "https://api.github.com/repos/migurski/circlejek/labels{/name}",\r  "releases_url": "https://api.github.com/repos/migurski/circlejek/releases{/id}",\r  "created_at": "2015-12-30T20:58:26Z",\r  "updated_at": "2015-12-30T21:03:10Z",\r  "pushed_at": "2016-01-06T05:36:42Z",\r  "git_url": "git://github.com/migurski/circlejek.git",\r  "ssh_url": "git@github.com:migurski/circlejek.git",\r  "clone_url": "https://github.com/migurski/circlejek.git",\r  "svn_url": "https://github.com/migurski/circlejek",\r  "homepage": null,\r  "size": 6,\r  "stargazers_count": 0,\r  "watchers_count": 0,\r  "language": "Ruby",\r  "has_issues": true,\r  "has_downloads": true,\r  "has_wiki": true,\r  "has_pages": false,\r  "forks_count": 0,\r  "mirror_url": null,\r  "open_issues_count": 0,\r  "forks": 0,\r  "open_issues": 0,\r  "watchers": 0,\r  "default_branch": "master",\r  "permissions": {\r    "admin": true,\r    "push": true,\r    "pull": true\r  },\r  "network_count": 0,\r  "subscribers_count": 1\r}'''
             return response(200, data.encode('utf8'), headers=response_headers)
@@ -184,11 +229,16 @@ class TestGit (unittest.TestCase):
     
     def test_split_branch_path(self):
         with HTTMock(self.response_content):
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', {}), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', {}), ('drew/dc-transit-events-2016', 'blog/'))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/', {}), ('drew/dc-transit-events-2016', ''))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016', {}), ('drew/dc-transit-events-2016', ''))
-            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew', {}), (None, 'drew'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', None), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/', None), ('drew/dc-transit-events-2016', 'blog/'))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/', None), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016', None), ('drew/dc-transit-events-2016', ''))
+            self.assertEqual(split_branch_path('mapzen', 'blog', 'drew', None), (None, 'drew'))
+    
+    def test_find_base_path(self):
+        with HTTMock(self.response_content):
+            self.assertEqual(find_base_path('migurski', 'circlejek', 'master', None), '$CIRCLE_ARTIFACTS')
+            self.assertEqual(find_base_path('migurski', 'circlejek', 'tinker-with-config', None), '/home/ubuntu/circlejek/_site')
     
     def test_existing_master(self):
         with HTTMock(self.response_content):

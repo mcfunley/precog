@@ -3,3 +3,4 @@ requests==2.4.1
 requests-oauthlib==0.4.1
 gunicorn==19.1.1
 HTTMock==1.2.3
+PyYAML==3.11
