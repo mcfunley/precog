@@ -6,7 +6,7 @@ from functools import wraps
 
 from flask import Response
 
-jlogger = getLogger('jekit')
+jlogger = getLogger('precog')
 
 @contextmanager
 def locked_file(path):

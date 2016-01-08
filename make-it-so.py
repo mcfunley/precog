@@ -24,7 +24,7 @@ app.secret_key = flask_secret_key
 
 @app.before_first_request
 def adjust_log_level():
-    getLogger('jekit').setLevel(DEBUG if app.debug else INFO)
+    getLogger('precog').setLevel(DEBUG if app.debug else INFO)
 
 def make_redirect(slash_count):
     ''' Return a flask.redirect for the current flask.request.
@@ -332,7 +332,7 @@ else:
     handler = StreamHandler()
     handler.setFormatter(Formatter('%(process)05s %(levelname)06s: %(message)s'))
 
-getLogger('jekit').addHandler(handler)
+getLogger('precog').addHandler(handler)
 
 if __name__ == '__main__':
     app.run('0.0.0.0', debug=True)

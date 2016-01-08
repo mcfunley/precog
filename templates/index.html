@@ -1,34 +1,36 @@
 {% extends "page-layout.html" %}
 {% block content %}
 
-    <h2>Jekit</h2>
+    <h2>Precog</h2>
     <p>
-        Preview your Github-hosted websites before making them live. Use it to
+        Preview your static websites built with CircleCI before making them live. Use it to
         check your plain static or <a href="http://jekyllrb.com">Jekyll</a>-generated
         websites before you make them live to <a href="http://pages.github.com">Github Pages</a>
-        or to your own server.
+        or to your own server. Requires configured and working
+        <a href="https://circleci.com/docs/build-artifacts">CircleCI artifacts</a>.
     </p>
     <p>
         Written by <a href="http://www.codeforamerica.org/people/michal-migurski/">Michal Migurski</a>
         with <a href="http://www.codeforamerica.org/people/mick-thompson/">Mick Thompson</a>,
-        © 2013-2014 <a href="http://codeforamerica.org">Code for America</a>.
+        © 2013-2015 <a href="http://codeforamerica.org">Code for America</a>
+        and © 2016 <a href="http://mapzen.com">Mapzen</a>.
     </p>
     <p>
-        You can view the source code for Jekit on GitHub at <a href="https://github.com/codeforamerica/git-jekyll-preview">https://github.com/codeforamerica/git-jekyll-preview</a>.
+        You can view the source code for Precog on GitHub at <a href="https://github.com/mapzen/precog">https://github.com/mapzen/precog</a>.
     </p>
     <h3>Check it, before you wreck it.</h3>
     <ol>
     <li>
         <p>
-            Preview pages in Jekit by adding your Github account name and repository
-            name to a Jekit URL:
+            Preview pages in Precog by adding your Github account name and repository
+            name to a Precog URL:
         </p>
         <p>
             <samp>{{request.host}}/<em>&lt;account&gt;/&lt;repo&gt;/</em></samp>
         </p>
         <p>
-            Example showing the <a href="https://github.com/codeforamerica/beyondtransparency">Beyond Transparency book site</a>:
-            <br><samp><a href="//{{request.host}}/codeforamerica/beyondtransparency">{{request.host}}/<em>codeforamerica/beyondtransparency/</em></a></samp>
+            Example showing the <a href="https://github.com/mapzen/blog">Mapzen website</a>:
+            <br><samp><a href="//{{request.host}}/mapzen/blog">{{request.host}}/<em>mapzen/blog/</em></a></samp>
         </p>
     </li>
     <li>
@@ -40,8 +42,8 @@
             <samp>{{request.host}}/&lt;account&gt;/&lt;repo&gt;/<em>&lt;ref&gt;/</em></samp>
         </p>
         <p>
-            Example showing a single <a href="https://github.com/codeforamerica/beyondtransparency/tree/08463604">Beyond Transparency commit</a>:
-            <br><samp><a href="//{{request.host}}/codeforamerica/beyondtransparency/08463604">{{request.host}}/codeforamerica/beyondtransparency/<em>08463604/</em></a></samp>
+            Example showing a single <a href="https://github.com/mapzen/blog/tree/159d528d1">Mapzen website commit</a>:
+            <br><samp><a href="//{{request.host}}/mapzen/blog/159d528d1">{{request.host}}/mapzen/blog/<em>159d528d1/</em></a></samp>
         </p>
     </li>
     <li>
@@ -52,24 +54,24 @@
             <samp>{{request.host}}/&lt;account&gt;/&lt;repo&gt;/&lt;ref&gt;/<em>wow/such-path.html</em></samp>
         </p>
         <p>
-            Example of the <a href="https://github.com/codeforamerica/beyondtransparency/blob/master/chapters/part-0.md">Beyond Transparency preface</a>:
-            <br><samp><a href="//{{request.host}}/codeforamerica/beyondtransparency/master/chapters/preface/">{{request.host}}/codeforamerica/beyondtransparency/master/<em>chapters/preface/</em></a></samp>
+            Example of the <a href="https://github.com/mapzen/blog/blob/master/_projects/vector-tiles.md">Mapzen Vector Tiles project page</a>:
+            <br><samp><a href="//{{request.host}}/mapzen/blog/master/projects/vector-tiles">{{request.host}}/mapzen/blog/master/<em>projects/vector-tiles</em></a></samp>
         </p>
     </li>
     </ol>
     <h3>Private Repositories</h3>
     <p>
-        Jekit will ask for access to your Github account to preview private
-        repositories. You can revoke Jekit’s access via your
+        Precog will ask for access to your Github account to preview private
+        repositories. You can revoke Precog’s access via your
         <a href="https://github.com/settings/applications">Github Applications page</a>.
-        Jekit will keep a copy of each private repository you preview for an
+        Precog will keep a copy of each private repository you preview for an
         unknown period of time.
     </p>
     {% if id %}
         <form action="logout" method="post">
           <p>
             <img id="avatar" src="{{id.avatar_url}}" alt="">
-            Jekit knows you as <a href="{{id.html_url}}">{{id.login}}</a>.
+            Precog knows you as <a href="{{id.html_url}}">{{id.login}}</a>.
             <input type="submit" value="Forget me.">
           </p>
         </form>

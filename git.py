@@ -50,7 +50,7 @@ class Getter:
             return self.responses[key][0]
         
         if host == 'api.github.com':
-            getLogger('jekit').warning('GET {}'.format(url))
+            getLogger('precog').warning('GET {}'.format(url))
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
