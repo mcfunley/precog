@@ -1,19 +1,22 @@
-Git-Jekyll Preview
-==================
+Precog
+======
 
-Preview your Github-hosted websites before making them live. Use it to check
-your plain static or [Jekyll](http://jekyllrb.com/)-generated websites before
-you make them live to [Github Pages](http://pages.github.com/) or to your own
-server.
+Previously [known as Git-Jekyll Preview](http://github.com/codeforamerica/git-jekyll-preview).
 
-Try it live at [jekit.codeforamerica.org](http://jekit.codeforamerica.org).
+Preview your static websites built with CircleCI before making them live.
+Use it to check your plain static or [Jekyll](http://jekyllrb.com/)-generated
+websites before you make them live to [Github Pages](http://pages.github.com/)
+or to your own server. Requires configured and working
+[CircleCI artifacts](https://circleci.com/docs/build-artifacts).
+
+Try it live at [precog.mapzen.com](http://precog.mapzen.com).
 
 Status, Contact
 ---------------
 
-Git-Jekyll Preview is mostly a singleton-app, built only to be run at a single
+Precog is mostly a singleton-app, built only to be run at a single
 location. For the time being, it's not intended for general redeployment but
-improvements for [jekit.codeforamerica.org](http://jekit.codeforamerica.org)
+improvements for [precog.mapzen.com](http://precog.mapzen.com)
 are welcomed.
 
 [Michal Migurski](https://github.com/migurski) is currently maintainer.
@@ -21,17 +24,10 @@ are welcomed.
 Install
 -------
 
-Git-Jekyll Preview is intended to be run on its own Ubuntu server, and will
-not currently work on a managed system like Heroku. Installation dependencies
-are managed by [Chef](https://wiki.opscode.com/display/chef/Home). It should
-be possible to install Chef and run all required recipes with the script
-[install.sh](install.sh). Note the world-writeable directories created in
-[chef/directories](chef/directories/recipes/default.rb).
-
-The application is a [Flask](http://flask.pocoo.org)-based Python server which
-shells out to [Git](https://www.kernel.org/pub/software/scm/git/docs/) for
-interaction with Github. [OAuth](http://developer.github.com/v3/oauth/) is
-used for authentication; put your client ID and secret in [git.py](git.py).
+The application is a [Flask](http://flask.pocoo.org)-based Python server.
+[OAuth](http://developer.github.com/v3/oauth/) is used for authentication;
+put your client ID and secret in environment variables `GITHUB_CLIENT_ID`
+and `GITHUB_CLIENT_SECRET`, and your CircleCI developer key in `CIRCLECI_TOKEN`.
 
 To run for testing:
 
