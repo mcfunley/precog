@@ -4,6 +4,8 @@ import unittest
 import importlib
 from urlparse import urlparse
 from httmock import HTTMock, response
+from mock import patch
+from time import sleep
 
 import href
 import git
@@ -99,6 +101,20 @@ class TestGit (unittest.TestCase):
             return response(200, data.encode('utf8'), headers=response_headers)
 
         raise Exception(MHPQ)
+    
+    def test_getter_timeout(self):
+        with patch('requests.get') as get:
+            get.side_effect = lambda url, headers, auth, timeout: [url]
+        
+            got1 = self.GET('http://example.com/', .2)
+
+            sleep(.1)
+            got2 = self.GET('http://example.com/', .2)
+            self.assertIs(got1, got2)
+            
+            sleep(.3)
+            got3 = self.GET('http://example.com/')
+            self.assertIsNot(got3, got2)
     
     def test_authenticated_user(self):
         with HTTMock(self.response_content):

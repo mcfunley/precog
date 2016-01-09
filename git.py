@@ -25,6 +25,8 @@ _GITHUB_TREE_URL = 'https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}'
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
+_LONGTIME = 3600
+
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
@@ -39,7 +41,7 @@ class Getter:
             if (time() > d):
                 self.responses.pop(k)
     
-    def get(self, url):
+    def get(self, url, lifespan=5):
         self._flush()
         
         host = urlparse(url).hostname
@@ -54,7 +56,7 @@ class Getter:
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
-        self.responses[key] = (resp, time() + 15)
+        self.responses[key] = (resp, time() + lifespan)
         return resp
 
 def is_authenticated(GET):
@@ -124,7 +126,7 @@ def find_base_path(owner, repo, ref, GET):
         return '$CIRCLE_ARTIFACTS'
     
     blob_url = paths['circle.yml']
-    blob_resp = GET(blob_url)
+    blob_resp = GET(blob_url, _LONGTIME)
     blob_yaml = b64decode(blob_resp.json()['content'])
     circle_config = yaml.load(blob_yaml)
     
@@ -166,7 +168,7 @@ def get_circle_artifacts(owner, repo, ref, GET):
     artifacts_base = find_base_path(owner, repo, ref, GET)
     artifacts_url = _CIRCLECI_ARTIFACTS_URL.format(build=circle_build, token=circle_token)
     artifacts = {relpath(a['pretty_path'], artifacts_base): '{}?circle-token={}'.format(a['url'], circle_token)
-                 for a in GET(artifacts_url).json()}
+                 for a in GET(artifacts_url, _LONGTIME).json()}
     
     return artifacts
 

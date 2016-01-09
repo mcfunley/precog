@@ -12,7 +12,7 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path
+from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path, _LONGTIME
 from href import needs_redirect, get_redirect
 from util import errors_logged
 
@@ -307,7 +307,7 @@ def repo_ref_path(account, repo, ref_path):
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
     try:
-        artifact_resp = GET(artifact_url)
+        artifact_resp = GET(artifact_url, _LONGTIME)
         if artifact_resp.status_code != 200:
             raise IOError('Bad response from CircleCI: HTTP {}'.format(artifact_resp.status_code))
         content = artifact_resp.content
