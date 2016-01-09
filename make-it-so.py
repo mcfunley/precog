@@ -47,7 +47,8 @@ def handle_redirects(route_function):
         # Look for a missing trailing slash at the repository root.
         split_req = request.path.lstrip('/').split('/', 2)
         
-        if len(split_req) == 3:
+        if len(split_req) == 3 and split_req[2] != '':
+            # There are three full components in the path: owner, repo, and ref.
             req_owner, req_repo, req_ref_path = split_req
             req_ref, req_path = split_branch_path(req_owner, req_repo, req_ref_path, GET)
             
@@ -335,4 +336,4 @@ else:
 getLogger('precog').addHandler(handler)
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', debug=True)
+    app.run('localhost', debug=True)
