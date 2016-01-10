@@ -2,7 +2,7 @@
 import doctest
 import unittest
 import importlib
-from urlparse import urlparse
+from urlparse import urlparse, parse_qsl
 from httmock import HTTMock, response
 from mock import patch
 from time import sleep
@@ -178,6 +178,7 @@ class TestApp (unittest.TestCase):
 
     def setUp(self):
         self.client = app.test_client()
+        git._defaultcache.clear()
     
     def response_content(self, url, request):
         '''
@@ -240,6 +241,70 @@ class TestApp (unittest.TestCase):
             index = self.client.get('/')
             self.assertEqual(index.status_code, 200)
             self.assertIn('Precog', index.data)
+    
+    def test_login(self):
+        '''
+        '''
+        def response_content1(url, request):
+            '''
+            '''
+            MHP = request.method, url.hostname, url.path
+            response_headers = {'Content-Type': 'application/json; charset=utf-8'}
+
+            if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/commits/master') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/master') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/master/'):
+                data = u'''{\r  "message": "Not Found",\r  "documentation_url": "https://developer.github.com/v3"\r}'''
+                return response(404, data.encode('utf8'), headers=response_headers)
+
+            if MHP == ('GET', 'api.github.com', '/user'):
+                data = u'''{\r  "message": "Requires authentication",\r  "documentation_url": "https://developer.github.com/v3"\r}'''
+                return response(401, data.encode('utf8'), headers=response_headers)
+
+            raise Exception(request.method, url, request.headers, request.body)
+        
+        with HTTMock(response_content1):
+            blog1 = self.client.get('/mapzen/blog/master/')
+            redirect1 = urlparse(blog1.headers.get('Location'))
+            self.assertEqual(blog1.status_code, 302)
+            self.assertEqual(redirect1.hostname, 'github.com')
+            self.assertEqual(redirect1.path, '/login/oauth/authorize')
+            
+            query = dict(parse_qsl(redirect1.query))
+            
+        def response_content2(url, request):
+            '''
+            '''
+            MHP = request.method, url.hostname, url.path
+            response_headers = {'Content-Type': 'application/json; charset=utf-8'}
+
+            if MHP == ('POST', 'github.com', '/login/oauth/access_token'):
+                form = dict(parse_qsl(request.body))
+                if form['code'] == 'let-me-in':
+                    data = u'''{"access_token":"working-access-token", "scope":"user,repo", "token_type":"bearer"}'''
+                    return response(200, data.encode('utf8'), headers=response_headers)
+
+            if MHP == ('GET', 'api.github.com', '/user'):
+                if request.headers['Authorization'] == 'Bearer working-access-token':
+                    data = u'''{\r  "login": "migurski",\r  "id": 58730,\r  "avatar_url": "https://avatars.githubusercontent.com/u/58730?v=3",\r  "gravatar_id": "",\r  "url": "https://api.github.com/users/migurski",\r  "html_url": "https://github.com/migurski",\r  "followers_url": "https://api.github.com/users/migurski/followers",\r  "following_url": "https://api.github.com/users/migurski/following{/other_user}",\r  "gists_url": "https://api.github.com/users/migurski/gists{/gist_id}",\r  "starred_url": "https://api.github.com/users/migurski/starred{/owner}{/repo}",\r  "subscriptions_url": "https://api.github.com/users/migurski/subscriptions",\r  "organizations_url": "https://api.github.com/users/migurski/orgs",\r  "repos_url": "https://api.github.com/users/migurski/repos",\r  "events_url": "https://api.github.com/users/migurski/events{/privacy}",\r  "received_events_url": "https://api.github.com/users/migurski/received_events",\r  "type": "User",\r  "site_admin": false,\r  "name": null,\r  "company": null,\r  "blog": null,\r  "location": null,\r  "email": "mike-github@teczno.com",\r  "hireable": null,\r  "bio": null,\r  "public_repos": 91,\r  "public_gists": 45,\r  "followers": 439,\r  "following": 94,\r  "created_at": "2009-02-27T23:44:32Z",\r  "updated_at": "2015-12-26T20:09:55Z",\r  "private_gists": 23,\r  "total_private_repos": 1,\r  "owned_private_repos": 0,\r  "disk_usage": 249156,\r  "collaborators": 0,\r  "plan": {\r    "name": "free",\r    "space": 976562499,\r    "collaborators": 0,\r    "private_repos": 0\r  }\r}'''
+                    return response(200, data.encode('utf8'), headers=response_headers)
+
+            raise Exception(request.method, url, request.headers, request.body)
+        
+        with HTTMock(response_content2):
+            auth2 = self.client.get('/oauth/callback?code=let-me-in&state={state}'.format(**query))
+            redirect2 = urlparse(auth2.headers.get('Location'))
+            self.assertEqual(auth2.status_code, 302)
+            self.assertEqual(redirect2.hostname, 'localhost')
+            self.assertEqual(redirect2.path, '/mapzen/blog/master/')
+            
+            logout3 = self.client.post('/logout')
+            
+            blog4 = self.client.get('/mapzen/blog/master/')
+            redirect4 = urlparse(blog4.headers.get('Location'))
+            self.assertEqual(blog4.status_code, blog1.status_code)
+            self.assertEqual(redirect4.hostname, redirect1.hostname)
+            self.assertEqual(redirect4.path, redirect1.path)
     
     def test_redirect_default_branch(self):
         '''

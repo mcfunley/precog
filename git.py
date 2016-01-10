@@ -26,11 +26,12 @@ _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
 _LONGTIME = 3600
+_defaultcache = {}
 
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
-    def __init__(self, github_auth, cache={}):
+    def __init__(self, github_auth, cache=_defaultcache):
         self.github_auth = github_auth
         self.responses = cache
     

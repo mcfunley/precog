@@ -5,6 +5,7 @@ from urllib import urlencode
 from functools import wraps
 from urlparse import urlparse
 from os import environ
+from uuid import uuid4
 from time import time
 
 from flask import Flask, Response, redirect, request, make_response, render_template, session
@@ -110,7 +111,7 @@ def make_401_response():
         Start by redirecting the user to Github OAuth authorization page:
         http://developer.github.com/v3/oauth/#redirect-users-to-request-github-access
     '''
-    state_id = 'foobar' # fake.
+    state_id = str(uuid4())
     states = session.get('states', {})
     states[state_id] = dict(redirect=request.url, created=time())
     session['states'] = states
