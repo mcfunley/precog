@@ -3,17 +3,7 @@
 <head>
     <meta charset="utf-8">
 	<title>Precog</title>
-    <link rel="stylesheet" type="text/css" href="//cloud.typography.com/6435252/678502/css/fonts.css" />
-    <link rel="stylesheet" href="//style.codeforamerica.org/style/css/main.css">
-    <link rel="stylesheet" href="//style.codeforamerica.org/style/css/layout.css" media="all and (min-width: 40em)">
-    <link href="//style.codeforamerica.org/style/css/prism.css" rel="stylesheet" />
-    <!--[if lt IE 9]>
-        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if (lt IE 9)&(!IEMobile)]>
-        <link rel="stylesheet" href="//style.codeforamerica.org/style/css/layout.css" media="all">
-    <![endif]-->
-
+    <link rel="stylesheet" href="https://mapzen.com/common/styleguide/styles/blog.css" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style type="text/css">
     
@@ -46,22 +36,11 @@
     </style>
 </head>
 <body>
-<div class="js-container">
-
-<nav class="nav-global-primary" role="navigation">
-    <ul class="layout-breve layout-tight">
-        <li><a href="/?go=&#x1f44c;">Home</a></li>
-    </ul>
-</nav><!-- .nav-global-primary -->
-
+<div class="container">
+<nav><a href="/">Home</a></nav>
 <main>
-    <div class="layout-semibreve">
-
     {% block content %}{% endblock %}
-
-    </div><!-- /.layout-semibreve -->
 </main>
-</div><!-- /.js-container -->
-<script src="//style.codeforamerica.org/script/global.js"></script>
+</div>
 </body>
 </html>
