@@ -151,10 +151,12 @@ def get_circle_artifacts(owner, repo, ref, GET):
     elif status_resp.status_code != 200:
         raise RuntimeError('some other HTTP status: {}'.format(status_resp.status_code))
     
-    if len(status_resp.json()) == 0:
+    statuses = [s for s in status_resp.json() if s['context'] == 'ci/circleci']
+    
+    if len(statuses) == 0:
         raise RuntimeError(ERR_NO_REF_STATUS)
 
-    status = status_resp.json()[0]
+    status = statuses[0]
     
     if status['state'] == 'pending':
         raise RuntimeError(ERR_TESTS_PENDING)
