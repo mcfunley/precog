@@ -22,6 +22,7 @@ _GITHUB_REPO_URL = 'https://api.github.com/repos/{owner}/{repo}'
 _GITHUB_REPO_HEAD_URL = 'https://api.github.com/repos/{owner}/{repo}/git/{head}'
 _GITHUB_COMMIT_URL = 'https://api.github.com/repos/{owner}/{repo}/commits/{sha}'
 _GITHUB_TREE_URL = 'https://api.github.com/repos/{owner}/{repo}/git/trees/{ref}'
+_GITHUB_HEADS_URL = 'https://api.github.com/repos/{owner}/{repo}/git/refs/heads'
 _GITHUB_STATUS_URL = 'https://api.github.com/repos/{owner}/{repo}/statuses/{ref}'
 _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts?circle-token={token}'
 
@@ -137,6 +138,24 @@ def find_base_path(owner, repo, ref, GET):
         return '$CIRCLE_ARTIFACTS'
     
     return join('/home/ubuntu/{}/'.format(repo), paths[0])
+
+def get_branch_names(owner, repo, GET):
+    ''' Return list of branch heads.
+    '''
+    heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
+    heads_resp = GET(heads_url)
+    heads_list = heads_resp.json()
+
+    next_url = heads_resp.links.get('next', {}).get('url')
+    
+    # Iterate over links, if any.
+    while next_url:
+        next_resp = GET(next_url)
+        next_url = next_resp.links.get('next', {}).get('url')
+        heads_list.extend(next_resp.json())
+    
+    branch_names = [relpath(head['ref'], 'refs/heads/') for head in heads_list]
+    return branch_names
 
 def get_circle_artifacts(owner, repo, ref, GET):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.

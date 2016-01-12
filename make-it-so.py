@@ -13,7 +13,7 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path, _LONGTIME
+from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path, _LONGTIME, get_branch_names
 from href import needs_redirect, get_redirect
 from util import errors_logged
 
@@ -260,17 +260,22 @@ def logout():
 @errors_logged
 @handle_redirects
 def repo_only(account, repo):
-    ''' Redirect to "master" on a hunch.
+    ''' Add a slash.
     '''
-    return redirect('/%s/%s/master/' % (account, repo), 302)
+    return redirect('/%s/%s/' % (account, repo), 302)
 
 @app.route('/<account>/<repo>/')
 @errors_logged
 @handle_redirects
 def repo_only_slash(account, repo):
-    ''' Redirect to "master" on a hunch.
+    ''' Show a list of branch names.
     '''
-    return redirect('/%s/%s/master/' % (account, repo), 302)
+    access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic')).get
+    template_args = dict(account=account, repo=repo)
+    branch_names = sorted(get_branch_names(account, repo, GET))
+    
+    return render_template('branches.html', branch_names=branch_names, **template_args)
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged
