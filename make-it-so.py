@@ -15,7 +15,7 @@ from requests import post
 from requests_oauthlib import OAuth2Session
 from git import (
     Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts,
-    select_path, _LONGTIME, get_branch_names, ERR_TESTS_PENDING
+    select_path, _LONGTIME, get_branch_names, ERR_TESTS_PENDING, ERR_TESTS_FAILED
     )
 from href import needs_redirect, get_redirect
 from util import errors_logged
@@ -312,6 +312,8 @@ def repo_ref_path(account, repo, ref_path):
     except RuntimeError as err:
         if err.args[0] == ERR_TESTS_PENDING:
             return make_response(render_template('error-pending.html', error=err), 200)
+        elif err.args[0] == ERR_TESTS_FAILED:
+            return make_response(render_template('error-failed.html', error=err), 200)
         else:
             return make_response(render_template('error-runtime.html', error=err), 400)
     

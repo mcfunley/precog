@@ -179,7 +179,7 @@ def get_circle_artifacts(owner, repo, ref, GET):
     
     if status['state'] == 'pending':
         raise RuntimeError(ERR_TESTS_PENDING, status['target_url'])
-    elif status['state'] == 'error':
+    elif status['state'] in ('error', 'failure'):
         raise RuntimeError(ERR_TESTS_FAILED, status['target_url'])
     elif status['state'] != 'success':
         raise RuntimeError('some other test outcome: {state}'.format(**status))
