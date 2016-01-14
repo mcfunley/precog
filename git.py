@@ -166,21 +166,21 @@ def get_circle_artifacts(owner, repo, ref, GET):
     status_resp = GET(status_url)
     
     if status_resp.status_code == 404:
-        raise RuntimeError(ERR_NO_REPOSITORY)
+        raise RuntimeError(ERR_NO_REPOSITORY, None)
     elif status_resp.status_code != 200:
         raise RuntimeError('some other HTTP status: {}'.format(status_resp.status_code))
     
     statuses = [s for s in status_resp.json() if s['context'] == 'ci/circleci']
     
     if len(statuses) == 0:
-        raise RuntimeError(ERR_NO_REF_STATUS)
+        raise RuntimeError(ERR_NO_REF_STATUS, None)
 
     status = statuses[0]
     
     if status['state'] == 'pending':
-        raise RuntimeError(ERR_TESTS_PENDING)
-    elif status['state'] == 'error':
-        raise RuntimeError(ERR_TESTS_FAILED)
+        raise RuntimeError(ERR_TESTS_PENDING, status['target_url'])
+    elif status['state'] in ('error', 'failure'):
+        raise RuntimeError(ERR_TESTS_FAILED, status['target_url'])
     elif status['state'] != 'success':
         raise RuntimeError('some other test outcome: {state}'.format(**status))
 

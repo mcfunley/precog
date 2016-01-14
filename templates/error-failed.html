@@ -1,0 +1,11 @@
+{% extends "page-layout.html" %}
+{% block content %}
+
+    <h2>Preview Failed 😢 </h2>
+    
+    <p>
+        This <a href="{{error.args[1]}}">preview failed</a>.
+        There’s probably a bug that needs fixing.
+    </p>
+
+{% endblock %}
