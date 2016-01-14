@@ -13,7 +13,10 @@ import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
-from git import Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts, select_path, _LONGTIME, get_branch_names
+from git import (
+    Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts,
+    select_path, _LONGTIME, get_branch_names, ERR_TESTS_PENDING
+    )
 from href import needs_redirect, get_redirect
 from util import errors_logged
 
@@ -307,7 +310,10 @@ def repo_ref_path(account, repo, ref_path):
         artifacts = get_circle_artifacts(account, repo, ref, GET)
         artifact_url = artifacts.get(select_path(artifacts, path))
     except RuntimeError as err:
-        return make_response(render_template('error-runtime.html', error=err), 400)
+        if err.args[0] == ERR_TESTS_PENDING:
+            return make_response(render_template('error-pending.html', error=err), 200)
+        else:
+            return make_response(render_template('error-runtime.html', error=err), 400)
     
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
