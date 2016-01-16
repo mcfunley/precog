@@ -1,3 +1,4 @@
+# coding: utf-8
 from logging import DEBUG, INFO, getLogger, FileHandler, StreamHandler, Formatter
 from os.path import join, isdir, isfile
 from traceback import format_exc
@@ -48,10 +49,19 @@ def handle_redirects(route_function):
     def wrapper(*args, **kwargs):
         GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
         
+        # See if the OK hand sign (U+1F44C) was given.
+        if request.args.get('go') == u'\U0001f44c':
+            return route_function(*args, **kwargs)
+
         # Look for a missing trailing slash at the repository root.
         split_req = request.path.lstrip('/').split('/', 2)
         
-        if len(split_req) == 3 and split_req[2] != '':
+        if len(split_req) == 2 and split_req[-1] != '':
+            # There are two full components in the path: owner and repo,
+            # but a missing trailing slash for the branch listing.
+            return redirect('{}/'.format(request.path), 302)
+        
+        if len(split_req) == 3 and split_req[-1] != '':
             # There are three full components in the path: owner, repo, and ref.
             req_owner, req_repo, req_ref_path = split_req
             req_ref, req_path = split_branch_path(req_owner, req_repo, req_ref_path, GET)
@@ -265,7 +275,7 @@ def logout():
 def repo_only(account, repo):
     ''' Add a slash.
     '''
-    return redirect('/%s/%s/' % (account, repo), 302)
+    return u'¯\_(ツ)_/¯'
 
 @app.route('/<account>/<repo>/')
 @errors_logged
@@ -286,7 +296,7 @@ def repo_only_slash(account, repo):
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
     '''
-    return redirect('/%s/%s/%s/' % (account, repo, ref), 302)
+    return u'¯\_(ツ)_/¯'
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
@@ -337,7 +347,7 @@ def repo_ref_path(account, repo, ref_path):
 def all_other_paths(path):
     '''
     '''
-    return 'Shrug.'
+    return u'¯\_(ツ)_/¯'
 
 if environ.get('app-logfile', None):
     handler = FileHandler(environ['app-logfile'])
