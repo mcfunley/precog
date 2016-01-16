@@ -193,7 +193,7 @@ class TestGit (unittest.TestCase):
 class TestApp (unittest.TestCase):
 
     def setUp(self):
-        self.okhand = urlencode({'go': u'\U0001f44c'.encode('utf8')}) # go=%F0%9F%91%8C
+        self.okhand = urlencode({'go': u'\U0001f44c'.encode('utf8')}) # go=%F0%9F%91%8C or go=👌
         self.client = app.test_client()
         git._defaultcache.clear()
     
