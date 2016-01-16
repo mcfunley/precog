@@ -448,6 +448,24 @@ class TestApp (unittest.TestCase):
 
             root4 = self.client.get('/projects?{}'.format(self.okhand), headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
             self.assertEqual(root4.status_code, 200)
+            
+            root5 = self.client.get('/projects/tangram', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            self.assertIn(root5.status_code, (301, 302))
+
+            redirect5 = urlparse(root5.headers['Location'])
+            self.assertEqual(redirect5.path, '/mapzen/blog/master/projects/tangram')
+            
+            root6 = self.client.get('/projects/tangram/tron', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            self.assertIn(root6.status_code, (301, 302))
+
+            redirect6 = urlparse(root6.headers['Location'])
+            self.assertEqual(redirect6.path, '/mapzen/blog/master/projects/tangram/tron')
+            
+            root7 = self.client.get('/projects/tangram/tron/etc', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            self.assertIn(root7.status_code, (301, 302))
+
+            redirect7 = urlparse(root7.headers['Location'])
+            self.assertEqual(redirect7.path, '/mapzen/blog/master/projects/tangram/tron/etc')
     
     def test_site_index(self):
         '''

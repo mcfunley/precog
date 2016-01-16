@@ -42,24 +42,25 @@ def make_redirect(slash_count):
 
     return other
 
-def handle_redirects(route_function):
+def handle_redirects(untouched_route):
     '''
     '''
-    @wraps(route_function)
-    def wrapper(*args, **kwargs):
+    @wraps(untouched_route)
+    def maybe_add_slashes(*args, **kwargs):
+        ''' Redirect with trailing slashes if necessary.
+        '''
         GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
         
-        # See if the OK hand sign (U+1F44C) was given.
-        if request.args.get('go') == u'\U0001f44c':
-            return route_function(*args, **kwargs)
-
         # Look for a missing trailing slash at the repository root.
         split_req = request.path.lstrip('/').split('/', 2)
         
         if len(split_req) == 2 and split_req[-1] != '':
             # There are two full components in the path: owner and repo,
-            # but a missing trailing slash for the branch listing.
-            return redirect('{}/'.format(request.path), 302)
+            req_owner, req_repo = split_req
+            
+            if repo_exists(req_owner, req_repo, GET):
+                # Missing a trailing slash for the branch listing.
+                return redirect('{}/'.format(request.path), 302)
         
         if len(split_req) == 3 and split_req[-1] != '':
             # There are three full components in the path: owner, repo, and ref.
@@ -69,34 +70,46 @@ def handle_redirects(route_function):
             if req_path == '' and not req_ref_path.endswith('/'):
                 # Missing a trailing slash at the root of the repository.
                 return redirect('{}/'.format(request.path), 302)
+        
+        return untouched_route(*args, **kwargs)
+    
+    @wraps(untouched_route)
+    def wrapper(*args, **kwargs):
+        ''' Redirect under repository root based on referer if necessary.
+        '''
+        GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
+        
+        # See if the OK hand sign (U+1F44C) was given.
+        if request.args.get('go') == u'\U0001f44c':
+            return untouched_route(*args, **kwargs)
 
         # See if there's a referer at all.
         referer_url = request.headers.get('Referer')
         
         if not referer_url:
             # No referer, no redirect.
-            return route_function(*args, **kwargs)
-
+            return maybe_add_slashes(*args, **kwargs)
+        
         # See if the referer path is long enough to suggest a redirect.
         referer_path = urlparse(referer_url).path
         split_path = referer_path.lstrip('/').split('/', 2)
         
         if len(split_path) != 3:
             # Not long enough.
-            return route_function(*args, **kwargs)
+            return maybe_add_slashes(*args, **kwargs)
         
         # Talk to Github about the path and find a ref name.
         path_owner, path_repo, path_ref = split_path
 
         if not repo_exists(path_owner, path_repo, GET):
             # No repo by this name, no redirect.
-            return route_function(*args, **kwargs)
+            return maybe_add_slashes(*args, **kwargs)
         
         ref, _ = split_branch_path(path_owner, path_repo, path_ref, GET)
         
         if ref is None:
             # No ref identified, no redirect.
-            return route_function(*args, **kwargs)
+            return maybe_add_slashes(*args, **kwargs)
         
         # Usually 3, but maybe more?
         slash_count = 2 + len(ref.split('/'))
@@ -106,7 +119,7 @@ def handle_redirects(route_function):
             return make_redirect(slash_count)
         
         # Otherwise, proceed as normal.
-        return route_function(*args, **kwargs)
+        return maybe_add_slashes(*args, **kwargs)
     
     return wrapper
 
