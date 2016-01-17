@@ -2,9 +2,9 @@
 from logging import DEBUG, INFO, getLogger, FileHandler, StreamHandler, Formatter
 from os.path import join, isdir, isfile
 from traceback import format_exc
-from collections import OrderedDict
 from urllib import urlencode
 from functools import wraps
+from operator import itemgetter
 from urlparse import urlparse
 from os import environ
 from uuid import uuid4
@@ -298,9 +298,12 @@ def repo_only_slash(account, repo):
     access_token = get_token().get('access_token')
     GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
-    branch_info = OrderedDict(sorted(get_branch_info(account, repo, GET).items()))
+    branches = sorted(get_branch_info(account, repo, GET).items())
     
-    return render_template('branches.html', branch_info=branch_info, **template_args)
+    if request.args.get('sort') == 'date':
+        branches.sort(key=itemgetter(1), reverse=False)
+    
+    return render_template('branches.html', branches=branches, **template_args)
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged

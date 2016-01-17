@@ -2,9 +2,12 @@
 {% block content %}
 
     <h1>Branches</h1>
-    <p>All branches in <a href="https://github.com/{{account}}/{{repo}}/branches">{{account}}/{{repo}}</a>:</p>
+    <p>
+        All branches in <a href="https://github.com/{{account}}/{{repo}}/branches">{{account}}/{{repo}}</a>
+        (sort <a href="./">by name</a>, sort <a href="./?sort=date">by date</a>):
+    </p>
     <ul>
-        {% for (name, age) in branch_info.items() %}
+        {% for (name, age) in branches %}
             <li><a href="{{name}}">{{name}}</a> <small>{{age|nice_relative_time}} ago</small></li>
         {% endfor %}
     </ul>
