@@ -4,6 +4,7 @@ from os.path import join, isdir, isfile
 from traceback import format_exc
 from urllib import urlencode
 from functools import wraps
+from operator import itemgetter
 from urlparse import urlparse
 from os import environ
 from uuid import uuid4
@@ -16,16 +17,17 @@ from requests import post
 from requests_oauthlib import OAuth2Session
 from git import (
     Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts,
-    select_path, _LONGTIME, get_branch_names, ERR_TESTS_PENDING, ERR_TESTS_FAILED
+    select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED
     )
 from href import needs_redirect, get_redirect
-from util import errors_logged
+from util import errors_logged, nice_relative_time
 
 from git import github_client_id, github_client_secret
 flask_secret_key = 'poop'
 
 app = Flask(__name__)
 app.secret_key = flask_secret_key
+app.jinja_env.filters['nice_relative_time'] = nice_relative_time
 
 @app.before_first_request
 def adjust_log_level():
@@ -296,9 +298,12 @@ def repo_only_slash(account, repo):
     access_token = get_token().get('access_token')
     GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
-    branch_names = sorted(get_branch_names(account, repo, GET))
+    branches = sorted(get_branch_info(account, repo, GET).items())
     
-    return render_template('branches.html', branch_names=branch_names, **template_args)
+    if request.args.get('sort') == 'date':
+        branches.sort(key=itemgetter(1), reverse=False)
+    
+    return render_template('branches.html', branches=branches, **template_args)
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged

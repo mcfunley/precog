@@ -8,6 +8,7 @@ from httmock import HTTMock, response
 from mock import patch
 from time import sleep
 
+import util
 import href
 import git
 app = importlib.import_module('make-it-so').app
@@ -111,6 +112,18 @@ class TestGit (unittest.TestCase):
             response_headers.update(Link='<https://api.github.com/repositories/34413671/git/refs?page=1>; rel="first", <https://api.github.com/repositories/34413671/git/refs?page=1>; rel="prev"')
             return response(200, data.encode('utf8'), headers=response_headers)
 
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/refs/heads'):
+            data = u'''[\r  {\r    "ref": "refs/heads/make-it-pop",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/make-it-pop",\r    "object": {\r      "sha": "992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r      "type": "commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b"\r    }\r  },\r  {\r    "ref": "refs/heads/many-little-files",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/many-little-files",\r    "object": {\r      "sha": "b7b85c936205ca72db80f05d11d2f4962facb9e5",\r      "type": "(something other than) commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/b7b85c936205ca72db80f05d11d2f4962facb9e5"\r    }\r  },\r  {\r    "ref": "refs/heads/master",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/master",\r    "object": {\r      "sha": "4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r      "type": "commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf"\r    }\r  },\r  {\r    "ref": "refs/heads/tinker-with-config",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/tinker-with-config",\r    "object": {\r      "sha": "3c6431c3c1fa730b792bc039877623ef60435a77",\r      "type": "(something other than) commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/3c6431c3c1fa730b792bc039877623ef60435a77"\r    }\r  }\r]'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b'):
+            data = u'''{\r  "sha": "992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "html_url": "https://github.com/migurski/circlejek/commit/992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "author": {\r    "name": "Michal Migurski",\r    "email": "mike@teczno.com",\r    "date": "2015-12-30T22:50:18Z"\r  },\r  "committer": {\r    "name": "Michal Migurski",\r    "email": "mike@teczno.com",\r    "date": "2015-12-30T22:50:18Z"\r  },\r  "tree": {\r    "sha": "3019fa8e88512b6e325b2116997b527834ff5f71",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/trees/3019fa8e88512b6e325b2116997b527834ff5f71"\r  },\r  "message": "Added exclamation points",\r  "parents": [\r    {\r      "sha": "6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "html_url": "https://github.com/migurski/circlejek/commit/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7"\r    }\r  ]\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf'):
+            data = u'''{\r  "sha": "4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "html_url": "https://github.com/migurski/circlejek/commit/4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "author": {\r    "name": "migurski",\r    "email": "mike-github@teczno.com",\r    "date": "2016-01-06T05:36:42Z"\r  },\r  "committer": {\r    "name": "migurski",\r    "email": "mike-github@teczno.com",\r    "date": "2016-01-06T05:36:42Z"\r  },\r  "tree": {\r    "sha": "f890f98bd0d50cf5ddba3d59e9dec2e282075d9b",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/trees/f890f98bd0d50cf5ddba3d59e9dec2e282075d9b"\r  },\r  "message": "Update index.md",\r  "parents": [\r    {\r      "sha": "6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "html_url": "https://github.com/migurski/circlejek/commit/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7"\r    }\r  ]\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
         raise Exception(MHPQ)
     
     def test_getter_timeout(self):
@@ -184,6 +197,12 @@ class TestGit (unittest.TestCase):
         self.assertEqual(git.select_path(tuple(), ''), 'index.html')
         self.assertEqual(git.select_path(tuple(), 'foo'), 'foo/index.html')
         self.assertEqual(git.select_path(('foo', ), 'foo'), 'foo')
+    
+    def test_get_branch_info(self):
+        with HTTMock(self.response_content):
+            branch_info = git.get_branch_info('migurski', 'circlejek', self.GET)
+            self.assertIn('make-it-pop', branch_info)
+            self.assertEqual(len(branch_info), 2)
     
     def test_get_branch_names(self):
         with HTTMock(self.response_content):
@@ -267,6 +286,42 @@ class TestApp (unittest.TestCase):
         
         if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/blobs/0912526f97d03d48830788c2bc9213306412b172'):
             data = u'''{\r  "sha": "0912526f97d03d48830788c2bc9213306412b172",\r  "size": 293,\r  "url": "https://api.github.com/repos/mapzen/blog/git/blobs/0912526f97d03d48830788c2bc9213306412b172",\r  "content": "bWFjaGluZToKICBydWJ5OgogICAgdmVyc2lvbjogMi4yLjMKdGVzdDoKICBv\\ndmVycmlkZToKICAgIC0gYnVuZGxlIGV4ZWMgamVreWxsIGJ1aWxkCgpnZW5l\\ncmFsOgogIGFydGlmYWN0czoKICAgIC0gIl9zaXRlIgoKZGVwbG95bWVudDoK\\nICBzdGFnaW5nOgogICAgYnJhbmNoOiBtYXN0ZXIKICAgIGNvbW1hbmRzOgog\\nICAgICAtIC4vZGVwbG95L2Vudi5yYiBkZXYKICBwcm9kdWN0aW9uOgogICAg\\nYnJhbmNoOiBwcm9kdWN0aW9uCiAgICBjb21tYW5kczoKICAgICAgLSAuL2Rl\\ncGxveS9lbnYucmIgcHJvZHVjdGlvbgo=\\n",\r  "encoding": "base64"\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+        
+        if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/4727812cb112afad90ec70bce33b3ad137812c13') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/f5cea70e5bba05c97b1cc37ef0bd29561f04a33e') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/a19b0ec40c0817e421e19b24d5cfe62c363141cc') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/a781daf557079f22a071bb42675c29f45168cff0') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/226431b463fa52176623424450d2501e569c38d5') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/e29fe7960089a87e8068ad8027a2c84bcd1c960c') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/7b48997fb382b652afea829a9582b7f0ee88e2c6') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/211b4f4ce8418adb292c4fb4e2fe6cb8495b4d5d') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/7b6a60ee7f70bc73a9866cf15aef9632470571ec') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/4f2469474ea8a1bc9f667ce4d1288fafd151647e') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/094f87bfd9a5a8a29072fac033b3ffd46be2d18b') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/0a9a561ab64b724fd55e54e216ef6510688cdca6') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/9fcfe06f75ebfb9195e2579176f3e48b28058d7f') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/bb2a0edb04c6e3fd1aff19f7b9d8b0d2e92f9295') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/f5f731aaf5b2735c38778981d995d95994265944') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/7b500e5cf2532eaf0e5700037f33d814dd09fb32') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/103995b0e313d018d10baad657b5a3d0c5658a27') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/59123caa7ba6d6494868528d4247bd4bfd37f608') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/97742c684e943806f938209819f876a59a470de8') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/49ecd93ec6f70c597e1e6c0ca1d4e462fee2bc5d') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/64bf6adc62bd28f0539a6c528957b2317dba6d8f') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/53bf63fda6bd6f493b46f9d54fa459d3adbeac1e') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/998265cf08eef84f2b007b64c87a26e6427791e2') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/159d528d17b234349141309094b5c8807173682c') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/803b9e2fe230916f249278bd5f8c8f2a256a427a') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/9b0727becbf74887d22a730fa1c51a0ac2f8b8d0') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/aed68f2d32496c5ae8908d531d6ba04953b53f88') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/e464c47fbbac6e16306700898071c1e5dc09e3e3') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/486d01e41103e66f44b4875263a6392428192c31') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/cbc135319feccbe01b39a05e3888f106d01d4eaf') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/287b866fc48efe39cc1c4b42d7983b8ed098e92f') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/e5fdb0247fde743bd9294afc820f13c345b842f0') \
+        or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/commits/4f208d9d3ab640e8e29ccbba8a27ada6584a5c1c'):
+            data = u'''{\r  "sha": "fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r  "url": "https://api.github.com/repos/mapzen/blog/git/commits/fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r  "html_url": "https://github.com/mapzen/blog/commit/fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r  "author": {\r    "name": "Riordan",\r    "email": "dr@daveriordan.com",\r    "date": "2015-12-16T21:57:56Z"\r  },\r  "committer": {\r    "name": "Riordan",\r    "email": "dr@daveriordan.com",\r    "date": "2015-12-16T21:57:56Z"\r  },\r  "tree": {\r    "sha": "fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r    "url": "https://api.github.com/repos/mapzen/blog/git/trees/fake-sha-fake-sha-fake-sha-fake-sha-fake-sha"\r  },\r  "message": "fixes queens address example in footnote, thx @amandabee",\r  "parents": [\r    {\r      "sha": "fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r      "url": "https://api.github.com/repos/mapzen/blog/git/commits/fake-sha-fake-sha-fake-sha-fake-sha-fake-sha",\r      "html_url": "https://github.com/mapzen/blog/commit/fake-sha-fake-sha-fake-sha-fake-sha-fake-sha"\r    }\r  ]\r}'''
             return response(200, data.encode('utf8'), headers=response_headers)
         
         if MHPQ == ('GET', 'circleci.com', '/api/v1/project/mapzen/blog/1947/artifacts', 'circle-token=a17131792f4c4bcb97f2f66d9c58258a0ee0e621'):
@@ -382,6 +437,7 @@ class TestApp (unittest.TestCase):
             branches = self.client.get(redirect.path)
             self.assertEqual(branches.status_code, 200)
             self.assertIn('"migurski/update-ui-engineer-job"', branches.data)
+            self.assertIn('days ago', branches.data)
     
     def test_redirect_addslash(self):
         '''
@@ -494,5 +550,6 @@ class TestApp (unittest.TestCase):
             self.assertIn('https://circleci.com/gh/mapzen/styleguide/86', index.data)
 
 if __name__ == '__main__':
+    doctest.testmod(util)
     doctest.testmod(href)
     unittest.main()
