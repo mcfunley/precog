@@ -4,8 +4,8 @@
     <h1>Branches</h1>
     <p>All branches in <a href="https://github.com/{{account}}/{{repo}}/branches">{{account}}/{{repo}}</a>:</p>
     <ul>
-        {% for branch in branch_names %}
-            <li><a href="{{branch}}">{{branch}}</a></li>
+        {% for (name, age) in branch_info.items() %}
+            <li><a href="{{name}}">{{name}}</a> – {{age}}</li>
         {% endfor %}
     </ul>
 
