@@ -1,10 +1,12 @@
 from os.path import relpath, join
 from urlparse import urlparse
 from logging import getLogger
+from datetime import datetime
 from base64 import b64decode
 from os import environ
 from time import time
 
+from dateutil.parser import parse, tz
 from requests_oauthlib import OAuth2Session
 import requests
 import yaml
@@ -138,6 +140,37 @@ def find_base_path(owner, repo, ref, GET):
         return '$CIRCLE_ARTIFACTS'
     
     return join('/home/ubuntu/{}/'.format(repo), paths[0])
+
+def get_branch_info(owner, repo, GET):
+    ''' Return dictionary of branch heads to ages.
+    '''
+    heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
+    heads_resp = GET(heads_url)
+    heads_list = heads_resp.json()
+
+    next_url = heads_resp.links.get('next', {}).get('url')
+    
+    # Iterate over links, if any.
+    while next_url:
+        next_resp = GET(next_url)
+        next_url = next_resp.links.get('next', {}).get('url')
+        heads_list.extend(next_resp.json())
+    
+    branch_info = dict()
+    
+    for head in heads_list:
+        if head['object']['type'] != 'commit':
+            continue
+        
+        obj_name = relpath(head['ref'], 'refs/heads/')
+        obj_resp = GET(head['object']['url'], _LONGTIME)
+
+        obj_date = parse(obj_resp.json().get('committer', {}).get('date', {}))
+        obj_age = datetime.now(tz=obj_date.tzinfo) - obj_date
+        
+        branch_info[obj_name] = obj_age
+    
+    return branch_info
 
 def get_branch_names(owner, repo, GET):
     ''' Return list of branch heads.

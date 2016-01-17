@@ -111,6 +111,18 @@ class TestGit (unittest.TestCase):
             response_headers.update(Link='<https://api.github.com/repositories/34413671/git/refs?page=1>; rel="first", <https://api.github.com/repositories/34413671/git/refs?page=1>; rel="prev"')
             return response(200, data.encode('utf8'), headers=response_headers)
 
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/refs/heads'):
+            data = u'''[\r  {\r    "ref": "refs/heads/make-it-pop",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/make-it-pop",\r    "object": {\r      "sha": "992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r      "type": "commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b"\r    }\r  },\r  {\r    "ref": "refs/heads/many-little-files",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/many-little-files",\r    "object": {\r      "sha": "b7b85c936205ca72db80f05d11d2f4962facb9e5",\r      "type": "(something other than) commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/b7b85c936205ca72db80f05d11d2f4962facb9e5"\r    }\r  },\r  {\r    "ref": "refs/heads/master",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/master",\r    "object": {\r      "sha": "4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r      "type": "commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf"\r    }\r  },\r  {\r    "ref": "refs/heads/tinker-with-config",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/refs/heads/tinker-with-config",\r    "object": {\r      "sha": "3c6431c3c1fa730b792bc039877623ef60435a77",\r      "type": "(something other than) commit",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/3c6431c3c1fa730b792bc039877623ef60435a77"\r    }\r  }\r]'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b'):
+            data = u'''{\r  "sha": "992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/commits/992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "html_url": "https://github.com/migurski/circlejek/commit/992071bebb72e99ef8293dc77b74c03ab07ffa1b",\r  "author": {\r    "name": "Michal Migurski",\r    "email": "mike@teczno.com",\r    "date": "2015-12-30T22:50:18Z"\r  },\r  "committer": {\r    "name": "Michal Migurski",\r    "email": "mike@teczno.com",\r    "date": "2015-12-30T22:50:18Z"\r  },\r  "tree": {\r    "sha": "3019fa8e88512b6e325b2116997b527834ff5f71",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/trees/3019fa8e88512b6e325b2116997b527834ff5f71"\r  },\r  "message": "Added exclamation points",\r  "parents": [\r    {\r      "sha": "6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "html_url": "https://github.com/migurski/circlejek/commit/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7"\r    }\r  ]\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
+        if MHP == ('GET', 'api.github.com', '/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf'):
+            data = u'''{\r  "sha": "4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "url": "https://api.github.com/repos/migurski/circlejek/git/commits/4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "html_url": "https://github.com/migurski/circlejek/commit/4872caf3203972ebbe13e3863e4c47c407ee4bbf",\r  "author": {\r    "name": "migurski",\r    "email": "mike-github@teczno.com",\r    "date": "2016-01-06T05:36:42Z"\r  },\r  "committer": {\r    "name": "migurski",\r    "email": "mike-github@teczno.com",\r    "date": "2016-01-06T05:36:42Z"\r  },\r  "tree": {\r    "sha": "f890f98bd0d50cf5ddba3d59e9dec2e282075d9b",\r    "url": "https://api.github.com/repos/migurski/circlejek/git/trees/f890f98bd0d50cf5ddba3d59e9dec2e282075d9b"\r  },\r  "message": "Update index.md",\r  "parents": [\r    {\r      "sha": "6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "url": "https://api.github.com/repos/migurski/circlejek/git/commits/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7",\r      "html_url": "https://github.com/migurski/circlejek/commit/6f82dac4d909926b2d099ef9ef2db7bd3e97e1a7"\r    }\r  ]\r}'''
+            return response(200, data.encode('utf8'), headers=response_headers)
+
         raise Exception(MHPQ)
     
     def test_getter_timeout(self):
@@ -184,6 +196,12 @@ class TestGit (unittest.TestCase):
         self.assertEqual(git.select_path(tuple(), ''), 'index.html')
         self.assertEqual(git.select_path(tuple(), 'foo'), 'foo/index.html')
         self.assertEqual(git.select_path(('foo', ), 'foo'), 'foo')
+    
+    def test_get_branch_info(self):
+        with HTTMock(self.response_content):
+            branch_info = git.get_branch_info('migurski', 'circlejek', self.GET)
+            self.assertIn('make-it-pop', branch_info)
+            self.assertEqual(len(branch_info), 2)
     
     def test_get_branch_names(self):
         with HTTMock(self.response_content):
