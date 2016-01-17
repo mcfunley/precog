@@ -8,6 +8,7 @@ from httmock import HTTMock, response
 from mock import patch
 from time import sleep
 
+import util
 import href
 import git
 app = importlib.import_module('make-it-so').app
@@ -436,6 +437,7 @@ class TestApp (unittest.TestCase):
             branches = self.client.get(redirect.path)
             self.assertEqual(branches.status_code, 200)
             self.assertIn('"migurski/update-ui-engineer-job"', branches.data)
+            self.assertIn('days ago', branches.data)
     
     def test_redirect_addslash(self):
         '''
@@ -548,5 +550,6 @@ class TestApp (unittest.TestCase):
             self.assertIn('https://circleci.com/gh/mapzen/styleguide/86', index.data)
 
 if __name__ == '__main__':
+    doctest.testmod(util)
     doctest.testmod(href)
     unittest.main()

@@ -20,13 +20,14 @@ from git import (
     select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED
     )
 from href import needs_redirect, get_redirect
-from util import errors_logged
+from util import errors_logged, nice_relative_time
 
 from git import github_client_id, github_client_secret
 flask_secret_key = 'poop'
 
 app = Flask(__name__)
 app.secret_key = flask_secret_key
+app.jinja_env.filters['nice_relative_time'] = nice_relative_time
 
 @app.before_first_request
 def adjust_log_level():
