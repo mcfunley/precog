@@ -1,3 +1,5 @@
 test:
   override:
     - python test.py
+  post:
+    - echo '<img src="https://gataplex.files.wordpress.com/2012/01/mindblown_st.gif" width="100%">' > $CIRCLE_ARTIFACTS/index.html
