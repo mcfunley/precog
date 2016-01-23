@@ -1,0 +1,15 @@
+{% extends "page-layout.html" %}
+{% block content %}
+
+    <h2>Authenticate With Github 🗝 </h2>
+    
+    <p>
+        Precog needs to be able to communicate with Github to read repository information on your behalf,
+        <a href="https://developer.github.com/v3/oauth/#scopes">using the “repo” and “user” scopes</a>.
+    </p>
+
+    <p>
+        <a href="{{href}}">Go tell Github it’s okay</a>.
+    </p>
+
+{% endblock %}
