@@ -191,24 +191,6 @@ def get_branch_info(owner, repo, GET):
     
     return branch_info
 
-def get_branch_names(owner, repo, GET):
-    ''' Return list of branch heads.
-    '''
-    heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
-    heads_resp = GET(heads_url)
-    heads_list = heads_resp.json()
-
-    next_url = heads_resp.links.get('next', {}).get('url')
-    
-    # Iterate over links, if any.
-    while next_url:
-        next_resp = GET(next_url)
-        next_url = next_resp.links.get('next', {}).get('url')
-        heads_list.extend(next_resp.json())
-    
-    branch_names = [relpath(head['ref'], 'refs/heads/') for head in heads_list]
-    return branch_names
-
 def get_circle_artifacts(owner, repo, ref, GET):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.
     '''

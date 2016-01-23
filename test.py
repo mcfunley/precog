@@ -225,11 +225,6 @@ class TestGit (unittest.TestCase):
             branch_info = git.get_branch_info('migurski', 'circlejek', self.GET)
             self.assertIn('make-it-pop', [branch.name for branch in branch_info])
             self.assertEqual(len(branch_info), 2)
-    
-    def test_get_branch_names(self):
-        with HTTMock(self.response_content):
-            branch_names = git.get_branch_names('mapzen', 'blog', self.GET)
-            self.assertIn('migurski/update-ui-engineer-job', branch_names)
 
 class TestApp (unittest.TestCase):
 
