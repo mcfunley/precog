@@ -7,8 +7,8 @@
         (sort <a href="./">by name</a>, sort <a href="./?sort=date">by date</a>):
     </p>
     <ul>
-        {% for (name, age) in branches %}
-            <li><a href="{{name}}">{{name}}</a> <small>{{age|nice_relative_time}} ago</small></li>
+        {% for branch in branches %}
+            <li><a href="{{branch.name}}">{{branch.name}}</a> <small>{{branch.age|nice_relative_time}} ago</small></li>
         {% endfor %}
     </ul>
 

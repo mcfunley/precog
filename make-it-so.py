@@ -4,7 +4,7 @@ from os.path import join, isdir, isfile
 from traceback import format_exc
 from urllib import urlencode
 from functools import wraps
-from operator import itemgetter
+from operator import attrgetter
 from urlparse import urlparse
 from os import environ
 from uuid import uuid4
@@ -317,10 +317,10 @@ def repo_only_slash(account, repo):
     access_token = get_token().get('access_token')
     GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
-    branches = sorted(get_branch_info(account, repo, GET).items())
+    branches = sorted(get_branch_info(account, repo, GET), key=attrgetter('name'))
     
     if request.args.get('sort') == 'date':
-        branches.sort(key=itemgetter(1), reverse=False)
+        branches.sort(key=attrgetter('age'), reverse=False)
     
     return render_template('branches.html', branches=branches, **template_args)
 

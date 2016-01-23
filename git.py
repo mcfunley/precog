@@ -141,8 +141,14 @@ def find_base_path(owner, repo, ref, GET):
     
     return join('/home/ubuntu/{}/'.format(repo), paths[0])
 
+class Branch:
+    def __init__(self, name, age, link):
+        self.name = name
+        self.link = link
+        self.age = age
+
 def get_branch_info(owner, repo, GET):
-    ''' Return dictionary of branch heads to ages.
+    ''' Return list of Branch instances.
     '''
     heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
     heads_resp = GET(heads_url)
@@ -156,7 +162,7 @@ def get_branch_info(owner, repo, GET):
         next_url = next_resp.links.get('next', {}).get('url')
         heads_list.extend(next_resp.json())
     
-    branch_info = dict()
+    branch_info = list()
     
     for head in heads_list:
         if head['object']['type'] != 'commit':
@@ -168,7 +174,7 @@ def get_branch_info(owner, repo, GET):
         obj_date = parse(obj_resp.json().get('committer', {}).get('date', {}))
         obj_age = datetime.now(tz=obj_date.tzinfo) - obj_date
         
-        branch_info[obj_name] = obj_age
+        branch_info.append(Branch(obj_name, obj_age, None))
     
     return branch_info
 
