@@ -198,16 +198,33 @@ class TestGit (unittest.TestCase):
         self.assertEqual(git.select_path(tuple(), 'foo'), 'foo/index.html')
         self.assertEqual(git.select_path(('foo', ), 'foo'), 'foo')
     
+    def test_branch_link(self):
+        link1 = git.get_branch_link('migurski', 'circlejek', 'master')
+        self.assertIsNone(link1)
+
+        link2 = git.get_branch_link('migurski', 'circlejek', 'migurski/blog')
+        self.assertIsNone(link2)
+
+        link3 = git.get_branch_link('mapzen', 'styleguide', 'migurski/blog')
+        self.assertIsNone(link3)
+
+        link4 = git.get_branch_link('mapzen', 'blog', 'migurski/blog')
+        self.assertEqual(link4, 'blog')
+
+        link5 = git.get_branch_link('mapzen', 'blog', 'migurski/blog-hello')
+        self.assertEqual(link5, 'blog')
+
+        link6 = git.get_branch_link('mapzen', 'blog', 'migurski/blog/hello')
+        self.assertIsNone(link6)
+
+        link7 = git.get_branch_link('mapzen', 'blog', 'migurski/slog-hello')
+        self.assertIsNone(link7)
+    
     def test_get_branch_info(self):
         with HTTMock(self.response_content):
             branch_info = git.get_branch_info('migurski', 'circlejek', self.GET)
-            self.assertIn('make-it-pop', branch_info)
+            self.assertIn('make-it-pop', [branch.name for branch in branch_info])
             self.assertEqual(len(branch_info), 2)
-    
-    def test_get_branch_names(self):
-        with HTTMock(self.response_content):
-            branch_names = git.get_branch_names('mapzen', 'blog', self.GET)
-            self.assertIn('migurski/update-ui-engineer-job', branch_names)
 
 class TestApp (unittest.TestCase):
 

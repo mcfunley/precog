@@ -5,6 +5,7 @@ from datetime import datetime
 from base64 import b64decode
 from os import environ
 from time import time
+from re import match
 
 from dateutil.parser import parse, tz
 from requests_oauthlib import OAuth2Session
@@ -141,8 +142,25 @@ def find_base_path(owner, repo, ref, GET):
     
     return join('/home/ubuntu/{}/'.format(repo), paths[0])
 
+class Branch:
+    def __init__(self, name, age, link):
+        self.name = name
+        self.link = link
+        self.age = age
+
+def get_branch_link(owner, repo, branch):
+    ''' Return link inside branch if it matches a pattern.
+    
+        Currently, just "foo/blog-bar" patterns in mapzen/blog are recognized.
+    '''
+    if (owner, repo) == ('mapzen', 'blog'):
+        if match(r'^\w+/blog($|-)', branch):
+            return 'blog'
+
+    return None
+
 def get_branch_info(owner, repo, GET):
-    ''' Return dictionary of branch heads to ages.
+    ''' Return list of Branch instances.
     '''
     heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
     heads_resp = GET(heads_url)
@@ -156,7 +174,7 @@ def get_branch_info(owner, repo, GET):
         next_url = next_resp.links.get('next', {}).get('url')
         heads_list.extend(next_resp.json())
     
-    branch_info = dict()
+    branch_info = list()
     
     for head in heads_list:
         if head['object']['type'] != 'commit':
@@ -164,31 +182,14 @@ def get_branch_info(owner, repo, GET):
         
         obj_name = relpath(head['ref'], 'refs/heads/')
         obj_resp = GET(head['object']['url'], _LONGTIME)
-
+        obj_link = get_branch_link(owner, repo, obj_name)
+        
         obj_date = parse(obj_resp.json().get('committer', {}).get('date', {}))
         obj_age = datetime.now(tz=obj_date.tzinfo) - obj_date
         
-        branch_info[obj_name] = obj_age
+        branch_info.append(Branch(obj_name, obj_age, obj_link))
     
     return branch_info
-
-def get_branch_names(owner, repo, GET):
-    ''' Return list of branch heads.
-    '''
-    heads_url = _GITHUB_HEADS_URL.format(owner=owner, repo=repo)
-    heads_resp = GET(heads_url)
-    heads_list = heads_resp.json()
-
-    next_url = heads_resp.links.get('next', {}).get('url')
-    
-    # Iterate over links, if any.
-    while next_url:
-        next_resp = GET(next_url)
-        next_url = next_resp.links.get('next', {}).get('url')
-        heads_list.extend(next_resp.json())
-    
-    branch_names = [relpath(head['ref'], 'refs/heads/') for head in heads_list]
-    return branch_names
 
 def get_circle_artifacts(owner, repo, ref, GET):
     ''' Return dictionary of CircleCI artifacts for a given Github repo ref.
