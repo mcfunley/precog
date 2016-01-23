@@ -72,12 +72,9 @@ def handle_redirects(untouched_route):
         
         return untouched_route(*args, **kwargs)
     
-    @wraps(untouched_route)
-    def wrapper(*args, **kwargs):
+    def maybe_redirect(request, GET, *args, **kwargs):
         ''' Redirect under repository root based on referer if necessary.
         '''
-        GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
-        
         # See if the OK hand sign (U+1F44C) was given.
         if request.args.get('go') == u'\U0001f44c':
             return untouched_route(*args, **kwargs)
@@ -119,6 +116,18 @@ def handle_redirects(untouched_route):
         
         # Otherwise, proceed as normal.
         return maybe_add_slashes(request.path, GET, *args, **kwargs)
+    
+    @wraps(untouched_route)
+    def wrapper(*args, **kwargs):
+        ''' Prompt user to authenticate with Github if necessary.
+        '''
+        access_token = get_token().get('access_token')
+        GET = Getter((access_token, 'x-oauth-basic')).get
+    
+        if access_token is None or not is_authenticated(GET):
+            return make_401_response()
+        
+        return maybe_redirect(request, GET, *args, **kwargs)
     
     return wrapper
 
@@ -321,9 +330,7 @@ def repo_ref_path(account, repo, ref_path):
     GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
     
-    if access_token is None or not is_authenticated(GET):
-        return make_401_response()
-    elif not repo_exists(account, repo, GET):
+    if not repo_exists(account, repo, GET):
         return make_404_response('no-such-repo.html', template_args)
     
     ref, path = split_branch_path(account, repo, ref_path, GET)

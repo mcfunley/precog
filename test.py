@@ -418,11 +418,12 @@ class TestApp (unittest.TestCase):
             
             logout3 = self.client.post('/logout')
             
-            blog4 = self.client.get('/mapzen/blog/master/')
-            redirect4 = urlparse(blog4.headers.get('Location'))
-            self.assertEqual(blog4.status_code, blog1.status_code)
-            self.assertEqual(redirect4.hostname, redirect1.hostname)
-            self.assertEqual(redirect4.path, redirect1.path)
+            for path in ['/mapzen/blog/master/', '/mapzen/blog/master', '/mapzen/blog/', '/mapzen/blog']:
+                blog4 = self.client.get(path)
+                redirect4 = urlparse(blog4.headers.get('Location', ''))
+                self.assertEqual(blog4.status_code, blog1.status_code, 'Status {} instead of {} for path {}'.format(blog4.status_code, blog1.status_code, path))
+                self.assertEqual(redirect4.hostname, redirect1.hostname, 'Hostname {} instead of {} for path {}'.format(redirect4.hostname, redirect1.hostname, path))
+                self.assertEqual(redirect4.path, redirect1.path, 'Path {} instead of {} for path {}'.format(redirect4.path, redirect1.path, path))
     
     def test_branch_listing(self):
         '''
