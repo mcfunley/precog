@@ -72,9 +72,12 @@ def handle_redirects(untouched_route):
         
         return untouched_route(*args, **kwargs)
     
-    def maybe_redirect(request, GET, *args, **kwargs):
+    @wraps(untouched_route)
+    def wrapper(*args, **kwargs):
         ''' Redirect under repository root based on referer if necessary.
         '''
+        GET = Getter((get_token().get('access_token'), 'x-oauth-basic')).get
+        
         # See if the OK hand sign (U+1F44C) was given.
         if request.args.get('go') == u'\U0001f44c':
             return untouched_route(*args, **kwargs)
@@ -117,8 +120,13 @@ def handle_redirects(untouched_route):
         # Otherwise, proceed as normal.
         return maybe_add_slashes(request.path, GET, *args, **kwargs)
     
+    return wrapper
+
+def handle_authentication(untouched_route):
+    '''
+    '''
     @wraps(untouched_route)
-    def wrapper(*args, **kwargs):
+    def wrapper(account, repo, *args, **kwargs):
         ''' Prompt user to authenticate with Github if necessary.
         '''
         access_token = get_token().get('access_token')
@@ -127,7 +135,7 @@ def handle_redirects(untouched_route):
         if access_token is None or not is_authenticated(GET):
             return make_401_response()
         
-        return maybe_redirect(request, GET, *args, **kwargs)
+        return untouched_route(account, repo, *args, **kwargs)
     
     return wrapper
 
@@ -292,6 +300,7 @@ def logout():
 
 @app.route('/<account>/<repo>')
 @errors_logged
+@handle_authentication
 @handle_redirects
 def repo_only(account, repo):
     ''' Add a slash.
@@ -300,6 +309,7 @@ def repo_only(account, repo):
 
 @app.route('/<account>/<repo>/')
 @errors_logged
+@handle_authentication
 @handle_redirects
 def repo_only_slash(account, repo):
     ''' Show a list of branch names.
@@ -316,6 +326,7 @@ def repo_only_slash(account, repo):
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged
+@handle_authentication
 @handle_redirects
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
@@ -324,6 +335,7 @@ def repo_ref(account, repo, ref):
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
+@handle_authentication
 @handle_redirects
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
