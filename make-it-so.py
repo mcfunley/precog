@@ -23,7 +23,7 @@ from href import needs_redirect, get_redirect
 from util import errors_logged, nice_relative_time
 
 from git import github_client_id, github_client_secret
-flask_secret_key = 'poop'
+flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 
 app = Flask(__name__)
 app.secret_key = flask_secret_key
