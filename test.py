@@ -383,8 +383,8 @@ class TestApp (unittest.TestCase):
         
         with HTTMock(response_content1):
             blog1 = self.client.get('/mapzen/blog/master/')
-            redirect1 = urlparse(blog1.headers.get('Location'))
-            self.assertEqual(blog1.status_code, 302)
+            redirect1 = urlparse(blog1.headers.get('X-Redirect', ''))
+            self.assertEqual(blog1.status_code, 401)
             self.assertEqual(redirect1.hostname, 'github.com')
             self.assertEqual(redirect1.path, '/login/oauth/authorize')
             
@@ -420,7 +420,7 @@ class TestApp (unittest.TestCase):
             
             for path in ['/mapzen/blog/master/', '/mapzen/blog/master', '/mapzen/blog/', '/mapzen/blog']:
                 blog4 = self.client.get(path)
-                redirect4 = urlparse(blog4.headers.get('Location', ''))
+                redirect4 = urlparse(blog4.headers.get('X-Redirect', ''))
                 self.assertEqual(blog4.status_code, blog1.status_code, 'Status {} instead of {} for path {}'.format(blog4.status_code, blog1.status_code, path))
                 self.assertEqual(redirect4.hostname, redirect1.hostname, 'Hostname {} instead of {} for path {}'.format(redirect4.hostname, redirect1.hostname, path))
                 self.assertEqual(redirect4.path, redirect1.path, 'Path {} instead of {} for path {}'.format(redirect4.path, redirect1.path, path))

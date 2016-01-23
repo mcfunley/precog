@@ -151,11 +151,11 @@ def make_401_response():
     session['states'] = states
     
     data = dict(scope='user,repo', client_id=github_client_id, state=state_id)
+    href = 'https://github.com/login/oauth/authorize?' + urlencode(data)
     
-    auth = redirect('https://github.com/login/oauth/authorize?' + urlencode(data), 302)
-    auth.headers['Cache-Control'] = 'no-store private'
-    auth.headers['Vary'] = 'Referer'
-
+    auth = make_response(render_template('error-authenticate.html', href=href), 401)
+    auth.headers['X-Redirect'] = href
+    
     return auth
 
 def make_404_response(template, vars):
