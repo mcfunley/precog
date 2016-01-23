@@ -5,6 +5,7 @@ from datetime import datetime
 from base64 import b64decode
 from os import environ
 from time import time
+from re import match
 
 from dateutil.parser import parse, tz
 from requests_oauthlib import OAuth2Session
@@ -147,6 +148,17 @@ class Branch:
         self.link = link
         self.age = age
 
+def get_branch_link(owner, repo, branch):
+    ''' Return link inside branch if it matches a pattern.
+    
+        Currently, just "foo/blog-bar" patterns in mapzen/blog are recognized.
+    '''
+    if (owner, repo) == ('mapzen', 'blog'):
+        if match(r'^\w+/blog($|-)', branch):
+            return 'blog'
+
+    return None
+
 def get_branch_info(owner, repo, GET):
     ''' Return list of Branch instances.
     '''
@@ -170,11 +182,12 @@ def get_branch_info(owner, repo, GET):
         
         obj_name = relpath(head['ref'], 'refs/heads/')
         obj_resp = GET(head['object']['url'], _LONGTIME)
-
+        obj_link = get_branch_link(owner, repo, obj_name)
+        
         obj_date = parse(obj_resp.json().get('committer', {}).get('date', {}))
         obj_age = datetime.now(tz=obj_date.tzinfo) - obj_date
         
-        branch_info.append(Branch(obj_name, obj_age, None))
+        branch_info.append(Branch(obj_name, obj_age, obj_link))
     
     return branch_info
 
