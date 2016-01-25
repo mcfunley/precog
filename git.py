@@ -9,6 +9,7 @@ from re import match
 
 from dateutil.parser import parse, tz
 from requests_oauthlib import OAuth2Session
+from uritemplate import expand as expand_uri
 import requests
 import yaml
 
@@ -238,3 +239,41 @@ def select_path(paths, path):
         return 'index.html'
 
     return '{}/index.html'.format(path.rstrip('/'))
+
+def skip_webhook_payload(payload):
+    ''' Return True if this payload should not be processed.
+    '''
+    if 'action' in payload and 'pull_request' in payload:
+        return bool(payload['action'] == 'closed')
+
+    if 'commits' in payload and 'head_commit' in payload:
+        # Deleted refs will not have a status URL.
+        return bool(payload.get('deleted') == True)
+
+    return True
+
+def get_webhook_commit_info(app, payload):
+    ''' Get owner, repository, commit SHA and Github status API URL from webhook payload.
+    '''
+    if 'pull_request' in payload:
+        commit_sha = payload['pull_request']['head']['sha']
+        status_url = payload['pull_request']['statuses_url']
+
+    elif 'head_commit' in payload:
+        commit_sha = payload['head_commit']['id']
+        status_url = payload['repository']['statuses_url']
+        status_url = expand_uri(status_url, dict(sha=commit_sha))
+
+    else:
+        raise ValueError('Unintelligible payload')
+
+    if 'repository' not in payload:
+        raise ValueError('Unintelligible payload')
+
+    repo = payload['repository']
+    owner = repo['owner'].get('name') or repo['owner'].get('login')
+    repository = repo['name']
+
+    app.logger.debug('Status URL {}'.format(status_url))
+
+    return owner, repository, commit_sha, status_url

@@ -9,15 +9,17 @@ from urlparse import urlparse
 from os import environ
 from uuid import uuid4
 from time import time
+import hmac, json, hashlib
 
-from flask import Flask, Response, redirect, request, make_response, render_template, session
+from flask import Flask, Response, redirect, request, make_response, render_template, session, current_app
 import requests
 
 from requests import post
 from requests_oauthlib import OAuth2Session
 from git import (
     Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts,
-    select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED
+    select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED,
+    skip_webhook_payload, get_webhook_commit_info
     )
 from href import needs_redirect, get_redirect
 from util import errors_logged, nice_relative_time
@@ -139,6 +141,54 @@ def handle_authentication(untouched_route):
     
     return wrapper
 
+def enforce_signature(route_function):
+    ''' Look for a signature and bark if it's wrong.
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        try:
+            webhook_payload = json.loads(request.data.decode('utf8'))
+            owner, repo, _, _ = get_webhook_commit_info(current_app, webhook_payload)
+        except:
+            return Response(json.dumps({'error': 'Unknown repository'}),
+                            401, content_type='application/json')
+            
+        owner_repo = '{}/{}'.format(owner, repo)
+        secret_key = current_app.config['HOOK_SECRETS_TOKENS'].get(owner_repo, {}).get('secret')
+    
+        #if not secret_key:
+        #    # No configured secrets means no signature needed.
+        #    getLogger('precog').info('No /hook signature required')
+        #    return route_function(*args, **kwargs)
+        
+        if secret_key is None:
+            return Response(json.dumps({'error': 'Missing key'}),
+                            401, content_type='application/json')
+    
+        if 'X-Hub-Signature' not in request.headers:
+            # Missing required signature is an error.
+            getLogger('precog').warning('No /hook signature provided')
+            return Response(json.dumps({'error': 'Missing signature'}),
+                            401, content_type='application/json')
+
+        def _sign(key):
+            hash = hmac.new(key, request.data, hashlib.sha1)
+            return 'sha1={}'.format(hash.hexdigest())
+
+        actual = request.headers.get('X-Hub-Signature')
+        expected = _sign(secret_key)
+        
+        if actual != expected:
+            # Signature mismatch is an error.
+            getLogger('precog').warning('Mismatched /hook signatures: {actual} vs. {expected}'.format(**locals()))
+            return Response(json.dumps({'error': 'Invalid signature'}),
+                            401, content_type='application/json')
+
+        getLogger('precog').info('Matching /hook signature: {actual}'.format(**locals()))
+        return route_function(*args, **kwargs)
+
+    return decorated_function
+
 def get_token():
     ''' Get OAuth token from flask.session, or a fake one guaranteed to fail.
     '''
@@ -221,6 +271,21 @@ def wellknown_status():
     resp.headers['Content-Type'] = 'application/json'
 
     return resp
+
+@app.route('/hook', methods=['POST'])
+@errors_logged
+@enforce_signature
+@handle_redirects
+def webhook():
+
+    webhook_payload = json.loads(request.data.decode('utf8'))
+
+    if skip_webhook_payload(webhook_payload):
+        return 'Nevermind'
+
+    print get_webhook_commit_info(current_app, webhook_payload)
+    
+    return 'Yo.'
 
 @app.route('/bookmarklet.js')
 @errors_logged
