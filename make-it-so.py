@@ -5,7 +5,7 @@ from traceback import format_exc
 from urllib import urlencode
 from functools import wraps
 from operator import attrgetter
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from os import environ
 from uuid import uuid4
 from time import time
@@ -19,7 +19,7 @@ from requests_oauthlib import OAuth2Session
 from git import (
     Getter, is_authenticated, repo_exists, split_branch_path, get_circle_artifacts,
     select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED,
-    skip_webhook_payload, get_webhook_commit_info
+    skip_webhook_payload, get_webhook_commit_info, post_github_status
     )
 from href import needs_redirect, get_redirect
 from util import errors_logged, nice_relative_time
@@ -184,7 +184,7 @@ def enforce_signature(route_function):
             return Response(json.dumps({'error': 'Invalid signature'}),
                             401, content_type='application/json')
 
-        getLogger('precog').info('Matching /hook signature: {actual}'.format(**locals()))
+        getLogger('precog').debug('Matching /hook signature: {actual}'.format(**locals()))
         return route_function(*args, **kwargs)
 
     return decorated_function
@@ -278,12 +278,22 @@ def wellknown_status():
 @handle_redirects
 def webhook():
 
-    webhook_payload = json.loads(request.data.decode('utf8'))
+    payload = json.loads(request.data.decode('utf8'))
 
-    if skip_webhook_payload(webhook_payload):
+    if skip_webhook_payload(payload):
         return 'Nevermind'
 
-    print get_webhook_commit_info(current_app, webhook_payload)
+    owner, repo, commit_sha, status_url = get_webhook_commit_info(current_app, payload)
+    target_path = u'/{owner}/{repo}/{commit_sha}/'.format(**locals())
+    
+    status = dict(context='mapzen/precog', state='success',
+                  target_url=urljoin(request.url, target_path),
+                  description=u'Preview your changes')
+
+    owner_repo = '{}/{}'.format(owner, repo)
+    token = current_app.config['HOOK_SECRETS_TOKENS'].get(owner_repo, {}).get('token')
+    
+    post_github_status(status_url, status, (token, 'x-oauth-basic'))
     
     return 'Yo.'
 

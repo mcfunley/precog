@@ -6,6 +6,7 @@ from base64 import b64decode
 from os import environ
 from time import time
 from re import match
+import json
 
 from dateutil.parser import parse, tz
 from requests_oauthlib import OAuth2Session
@@ -277,3 +278,21 @@ def get_webhook_commit_info(app, payload):
     app.logger.debug('Status URL {}'.format(status_url))
 
     return owner, repository, commit_sha, status_url
+
+def post_github_status(status_url, status_json, github_auth):
+    ''' POST status JSON to Github status API.
+    '''
+    if status_url is None:
+        return
+    
+    # Github only wants 140 chars of description.
+    status_json['description'] = status_json['description'][:140]
+    
+    posted = requests.post(status_url, data=json.dumps(status_json), auth=github_auth,
+                           headers={'Content-Type': 'application/json'})
+    
+    if posted.status_code not in range(200, 299):
+        raise ValueError('Failed status post to {}'.format(status_url))
+    
+    if posted.json()['state'] != status_json['state']:
+        raise ValueError('Mismatched status post to {}'.format(status_url))
