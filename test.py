@@ -244,9 +244,8 @@ class TestApp (unittest.TestCase):
         self.client = app.test_client()
         git._defaultcache.clear()
         
-        app.config['HOOK_SECRETS_TOKENS'] = {
-            'openaddresses/hooked-on-sources': dict(token='abracadabra', secret='hos-secret')
-            }
+        webhook_config = 'blah:blah:blah openaddresses/hooked-on-sources:hos-secret:abracadabra blah:blah:blah'
+        app.config['HOOK_SECRETS_TOKENS'] = util.parse_webhook_config(webhook_config)
     
     def response_content(self, url, request):
         '''
@@ -669,6 +668,6 @@ class TestApp (unittest.TestCase):
             self.assertEqual(posted4.status_code, 200)
 
 if __name__ == '__main__':
-    doctest.testmod(util)
-    doctest.testmod(href)
+    doctest.testmod(util, raise_on_error=True)
+    doctest.testmod(href, raise_on_error=True)
     unittest.main()
