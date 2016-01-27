@@ -587,6 +587,11 @@ class TestApp (unittest.TestCase):
             self.assertEqual(index.status_code, 200)
             self.assertIn('Hold Your Horses', index.data)
             self.assertIn('https://circleci.com/gh/mapzen/blog/1987', index.data)
+            self.assertIn('<meta http-equiv="refresh" content="15; url=/mapzen/blog/dde72b5/">', index.data)
+
+            page = self.client.get('/mapzen/blog/dde72b5/page')
+            self.assertEqual(page.status_code, 200)
+            self.assertIn('<meta http-equiv="refresh" content="15; url=/mapzen/blog/dde72b5/page">', page.data)
     
     def test_circle_failed(self):
         '''
