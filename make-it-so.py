@@ -432,7 +432,7 @@ def repo_ref_path(account, repo, ref_path):
         artifact_url = artifacts.get(select_path(artifacts, path))
     except RuntimeError as err:
         if err.args[0] == ERR_TESTS_PENDING:
-            return make_response(render_template('error-pending.html', error=err), 200)
+            return make_response(render_template('error-pending.html', error=err, refresh=request.path), 200)
         elif err.args[0] == ERR_TESTS_FAILED:
             return make_response(render_template('error-failed.html', error=err), 200)
         else:

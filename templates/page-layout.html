@@ -5,6 +5,9 @@
 	<title>Precog</title>
     <link rel="stylesheet" href="https://mapzen.com/common/styleguide/styles/blog.css" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    {% if refresh %}
+        <meta http-equiv="refresh" content="15; url={{refresh}}">
+    {% endif %}
     <style type="text/css">
     
         kbd
