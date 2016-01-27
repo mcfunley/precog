@@ -86,6 +86,31 @@ def nice_relative_time(delta):
     
     return '{:.0f} seconds'.format(seconds)
 
+def parse_webhook_config(string):
+    '''
+    >>> parse_webhook_config('')
+    {}
+
+    >>> parse_webhook_config('mapzen/blog:abc:def') \
+        == {'mapzen/blog': dict(secret='abc', token='def')}
+    True
+
+    >>> parse_webhook_config('mapzen/blog:abc:def:ghi') \
+        == {'mapzen/blog': dict(secret='abc', token='def:ghi')}
+    True
+
+    >>> parse_webhook_config('mapzen/blog:abc:def mapzen/style:ghi:jkl') \
+        == {'mapzen/blog': dict(secret='abc', token='def'), \
+            'mapzen/style': dict(secret='ghi', token='jkl')}
+    True
+    '''
+    sites = dict()
+    for site in string.split():
+        name, secret, token = site.split(':', 2)
+        sites[name] = dict(secret=secret, token=token)
+    
+    return sites
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
