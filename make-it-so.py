@@ -22,14 +22,16 @@ from git import (
     skip_webhook_payload, get_webhook_commit_info, post_github_status
     )
 from href import needs_redirect, get_redirect
-from util import errors_logged, nice_relative_time
+from util import errors_logged, nice_relative_time, parse_webhook_config
 
 from git import github_client_id, github_client_secret
 flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
+webhook_config = parse_webhook_config(environ.get('WEBHOOK_CONFIG', ''))
 
 app = Flask(__name__)
 app.secret_key = flask_secret_key
 app.jinja_env.filters['nice_relative_time'] = nice_relative_time
+app.config['HOOK_SECRETS_TOKENS'] = webhook_config
 
 @app.before_first_request
 def adjust_log_level():
