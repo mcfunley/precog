@@ -134,8 +134,12 @@ def find_base_path(owner, repo, ref, GET):
     
     blob_url = paths['circle.yml']
     blob_resp = GET(blob_url, _LONGTIME)
-    blob_yaml = b64decode(blob_resp.json()['content'])
-    circle_config = yaml.load(blob_yaml)
+    blob_yaml = b64decode(blob_resp.json()['content']).decode('utf8')
+    
+    try:
+        circle_config = yaml.load(blob_yaml)
+    except yaml.reader.ReaderError as err:
+        raise RuntimeError('Problem reading configuration from circle.yml: {}'.format(err))
     
     paths = circle_config.get('general', {}).get('artifacts', [])
     
