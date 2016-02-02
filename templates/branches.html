@@ -9,8 +9,11 @@
     <ul>
         {% for branch in branches %}
             <li>
-                <a href="{{branch.name}}">{{branch.name}}</a>
-                {% if branch.link %}<a href="{{branch.name}}/{{branch.link}}">/{{branch.link}}</a>{% endif %}
+                {% if branch.link %}
+                    <a href="{{branch.name}}/{{branch.link}}">{{branch.name}} /{{branch.link}}</a>
+                {% else %}
+                    <a href="{{branch.name}}">{{branch.name}}</a>
+                {% endif %}
                 <small>{{branch.age|nice_relative_time}} ago</small>
             </li>
         {% endfor %}
