@@ -1,5 +1,19 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - docker build -t precog .
+
 test:
   override:
     - python test.py
   post:
     - echo '<body bgcolor="black"><img src="https://gataplex.files.wordpress.com/2012/01/mindblown_st.gif" width="100%"></body>' > $CIRCLE_ARTIFACTS/index.html
+
+deployment:
+  hub:
+    branch: baldur/docker
+    commands:
+      - ./deploy.sh
