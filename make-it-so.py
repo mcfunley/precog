@@ -23,7 +23,7 @@ from git import (
     select_path, _LONGTIME, get_branch_info, ERR_TESTS_PENDING, ERR_TESTS_FAILED,
     skip_webhook_payload, get_webhook_commit_info, post_github_status
     )
-from href import needs_redirect, get_redirect
+from href import needs_redirect, get_redirect, absolute_url
 from util import errors_logged, nice_relative_time, parse_webhook_config
 
 from git import github_client_id, github_client_secret
@@ -47,7 +47,8 @@ def make_redirect(slash_count):
     '''
     referer_url = request.headers.get('Referer')
 
-    other = redirect(get_redirect(request.path, referer_url, slash_count), 302)
+    location = get_redirect(request.path, referer_url, slash_count)
+    other = redirect(absolute_url(request, location), 302)
     other.headers['Cache-Control'] = 'no-store private'
     other.headers['Vary'] = 'Referer'
 
@@ -68,7 +69,7 @@ def handle_redirects(untouched_route):
             
             if repo_exists(req_owner, req_repo, GET):
                 # Missing a trailing slash for the branch listing.
-                return redirect('{}/'.format(request_path), 302)
+                return redirect(absolute_url(request, '{}/'.format(request_path)), 302)
         
         if len(split_req) == 3 and split_req[-1] != '':
             # There are three full components in the path: owner, repo, and ref.
@@ -77,7 +78,7 @@ def handle_redirects(untouched_route):
             
             if req_path == '' and not req_ref_path.endswith('/'):
                 # Missing a trailing slash at the root of the repository.
-                return redirect('{}/'.format(request_path), 302)
+                return redirect(absolute_url(request, '{}/'.format(request_path)), 302)
         
         return untouched_route(*args, **kwargs)
     
@@ -361,7 +362,7 @@ def get_oauth_callback():
     id = dict(login=id['login'], avatar_url=id['avatar_url'], html_url=id['html_url'])
     session['id'] = id
     
-    other = redirect(state['redirect'], 302)
+    other = redirect(absolute_url(request, state['redirect']), 302)
     other.headers['Cache-Control'] = 'no-store private'
     other.headers['Vary'] = 'Referer'
 
@@ -378,7 +379,7 @@ def logout():
     if 'token' in session:
         session.pop('token')
     
-    return redirect('/', 302)
+    return redirect(absolute_url(request, '/'), 302)
 
 @app.route('/<account>/<repo>')
 @errors_logged

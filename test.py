@@ -6,7 +6,7 @@ from os.path import basename
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl
 from httmock import HTTMock, response
-from mock import patch
+from mock import patch, Mock
 from time import sleep
 import hmac, hashlib
 import json
@@ -563,6 +563,13 @@ class TestApp (unittest.TestCase):
 
             root4 = self.client.get('/?{}'.format(self.okhand), headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
             self.assertEqual(root4.status_code, 200)
+
+            root5 = self.client.get('/', headers={'X-Forwarded-Proto': 'https', 'Referer': 'https://localhost/mapzen/blog/master/page'})
+            self.assertIn(root5.status_code, (301, 302))
+
+            redirect5 = urlparse(root5.headers['Location'])
+            self.assertEqual(redirect5.scheme, 'https')
+            self.assertEqual(redirect5.path, '/mapzen/blog/master/')
     
     def test_redirect_site_page(self):
         '''
@@ -714,7 +721,27 @@ class TestApp (unittest.TestCase):
             self.assertEqual(posted3.status_code, 200)
             self.assertEqual(posted4.status_code, 200)
 
+class TestFunctions (unittest.TestCase):
+    
+    def test_absolute_url(self):
+        req1 = Mock()
+        req1.scheme, req1.host, req1.path = 'http', 'example.com', '/foo/'
+        req1.headers = dict()
+        self.assertEqual(href.absolute_url(req1, '/bar'), '/bar')
+        self.assertEqual(href.absolute_url(req1, 'http://example.org/bar'), 'http://example.org/bar')
+        
+        req2 = Mock()
+        req2.scheme, req2.host, req2.path = 'http', 'example.com', '/foo/'
+        req2.headers = {'X-Forwarded-Proto': 'https'}
+        self.assertEqual(href.absolute_url(req2, '/bar'), 'https://example.com/bar')
+        self.assertEqual(href.absolute_url(req2, 'http://example.org/bar'), 'http://example.org/bar')
+        self.assertEqual(href.absolute_url(req2, 'bar'), 'https://example.com/foo/bar')
+
+    def test_util_doctest(self):
+        doctest.testmod(util, raise_on_error=True)
+
+    def test_href_doctest(self):
+        doctest.testmod(href, raise_on_error=True)
+
 if __name__ == '__main__':
-    doctest.testmod(util, raise_on_error=True)
-    doctest.testmod(href, raise_on_error=True)
     unittest.main()
