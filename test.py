@@ -730,8 +730,11 @@ class TestFunctions (unittest.TestCase):
         self.assertEqual(href.absolute_url(req2, 'http://example.org/bar'), 'http://example.org/bar')
         self.assertEqual(href.absolute_url(req2, 'bar'), 'https://example.com/foo/bar')
 
+    def test_util_doctest(self):
+        doctest.testmod(util, raise_on_error=True)
+
+    def test_href_doctest(self):
+        doctest.testmod(href, raise_on_error=True)
 
 if __name__ == '__main__':
-    doctest.testmod(util, raise_on_error=True)
-    doctest.testmod(href, raise_on_error=True)
     unittest.main()
