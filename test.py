@@ -563,6 +563,13 @@ class TestApp (unittest.TestCase):
 
             root4 = self.client.get('/?{}'.format(self.okhand), headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
             self.assertEqual(root4.status_code, 200)
+
+            root5 = self.client.get('/', headers={'X-Forwarded-Proto': 'https', 'Referer': 'https://localhost/mapzen/blog/master/page'})
+            self.assertIn(root5.status_code, (301, 302))
+
+            redirect5 = urlparse(root5.headers['Location'])
+            self.assertEqual(redirect5.scheme, 'https')
+            self.assertEqual(redirect5.path, '/mapzen/blog/master/')
     
     def test_redirect_site_page(self):
         '''
