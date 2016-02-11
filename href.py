@@ -1,4 +1,4 @@
-from urlparse import urlparse
+from urlparse import urlparse, urljoin, urlunparse
 from re import match
     
 def get_redirect(req_path, ref_url, slash_count=3):
@@ -115,6 +115,16 @@ def needs_redirect(req_host, req_path, ref_url, slash_count=3):
         return False
     
     return True
+
+def absolute_url(request, location):
+    '''
+    '''
+    if 'X-Forwarded-Proto' not in request.headers:
+        return location
+    
+    scheme = request.headers.get('X-Forwarded-Proto')
+    actual_url = urlunparse((scheme, request.host, request.path, None, None, None))
+    return urljoin(actual_url, location)
 
 if __name__ == '__main__':
     import doctest
