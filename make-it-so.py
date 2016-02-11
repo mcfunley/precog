@@ -10,6 +10,7 @@ from os import environ
 from uuid import uuid4
 from time import time
 import hmac, json, hashlib
+import sys
 
 from flask import Flask, Response, redirect, request, make_response, render_template, session, current_app
 from flask_sslify import SSLify
@@ -30,7 +31,9 @@ flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 webhook_config = parse_webhook_config(environ.get('WEBHOOK_CONFIG', ''))
 
 app = Flask(__name__)
-SSLify(app)
+if sys.argv[0] != 'test.py':
+    getLogger('precog').info('SSLifying')
+    SSLify(app)
 app.secret_key = flask_secret_key
 app.jinja_env.filters['nice_relative_time'] = nice_relative_time
 app.config['HOOK_SECRETS_TOKENS'] = webhook_config
