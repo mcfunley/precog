@@ -51,7 +51,7 @@ personal access token to write results back to the Github Status API.
 
 1. Generate a [personal access token](https://github.com/settings/tokens) and
    give it a descriptive name like “Precog Status Updates: {repo name}” so
-   you can figure out what it is later.
+   you can figure out what it is later. Give it `repo` scope access.
    
 2. Make a random alphanumeric secret that will be shared between Precog
    and Github’s webhook setting, to ensure that only requests from the right
@@ -68,5 +68,5 @@ personal access token to write results back to the Github Status API.
    Currently, this must be done by talking to Mike.
    
 4. Add a webhook to the Github repository, using the payload URL
-   `http://precog.mapzen.com/hook`, the secret from earlier, and the
+   `https://precog.mapzen.com/hook`, the secret from earlier, and the
    `application/json` content type. Send just the Pull Request and Push events.
