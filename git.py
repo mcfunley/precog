@@ -160,7 +160,7 @@ def get_branch_link(owner, repo, branch):
         Currently, just "foo/blog-bar" patterns in mapzen/blog are recognized.
     '''
     if (owner, repo) == ('mapzen', 'blog'):
-        if match(r'^\w+/blog($|-)', branch):
+        if match(r'^\w+/blog($|-|/)', branch):
             return 'blog'
 
     return None

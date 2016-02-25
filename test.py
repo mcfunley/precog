@@ -239,10 +239,13 @@ class TestGit (unittest.TestCase):
         self.assertEqual(link5, 'blog')
 
         link6 = git.get_branch_link('mapzen', 'blog', 'migurski/blog/hello')
-        self.assertIsNone(link6)
+        self.assertEqual(link6, 'blog')
 
         link7 = git.get_branch_link('mapzen', 'blog', 'migurski/slog-hello')
         self.assertIsNone(link7)
+
+        link8 = git.get_branch_link('mapzen', 'blog', 'migurski/blog_hello')
+        self.assertIsNone(link8)
     
     def test_get_branch_info(self):
         with HTTMock(self.response_content):
