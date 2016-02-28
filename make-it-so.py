@@ -28,7 +28,10 @@ from util import errors_logged, nice_relative_time, parse_webhook_config
 
 from git import github_client_id, github_client_secret
 flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
-webhook_config = parse_webhook_config(environ.get('WEBHOOK_CONFIG', ''))
+
+webhook_config = parse_webhook_config(*[val for (key, val) in environ.items()
+                                        if key.startswith('WEBHOOK_CONFIG_')
+                                        or key == 'WEBHOOK_CONFIG'])
 
 app = Flask(__name__)
 if sys.argv[0] != 'test.py':
