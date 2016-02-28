@@ -260,8 +260,8 @@ class TestApp (unittest.TestCase):
         self.client = app.test_client()
         git._defaultcache.clear()
         
-        webhook_config = 'blah:blah:blah openaddresses/hooked-on-sources:hos-secret:abracadabra blah:blah:blah'
-        app.config['HOOK_SECRETS_TOKENS'] = util.parse_webhook_config(webhook_config)
+        webhook_configs = 'blah:blah:blah', 'openaddresses/hooked-on-sources:hos-secret:abracadabra'
+        app.config['HOOK_SECRETS_TOKENS'] = util.parse_webhook_config(*webhook_configs)
     
     def response_content(self, url, request):
         '''

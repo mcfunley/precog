@@ -86,9 +86,12 @@ def nice_relative_time(delta):
     
     return '{:.0f} seconds'.format(seconds)
 
-def parse_webhook_config(string):
+def parse_webhook_config(*strings):
     '''
     >>> parse_webhook_config('')
+    {}
+
+    >>> parse_webhook_config()
     {}
 
     >>> parse_webhook_config('mapzen/blog:abc:def') \
@@ -103,9 +106,19 @@ def parse_webhook_config(string):
         == {'mapzen/blog': dict(secret='abc', token='def'), \
             'mapzen/style': dict(secret='ghi', token='jkl')}
     True
+
+    >>> parse_webhook_config('mapzen/blog:abc:def', 'mapzen/style:ghi:jkl') \
+        == {'mapzen/blog': dict(secret='abc', token='def'), \
+            'mapzen/style': dict(secret='ghi', token='jkl')}
+    True
+
+    >>> parse_webhook_config('mapzen/blog:abc:def', 'mapzen/style:ghi:jkl', 'mapzen/blog:mno:pqr') \
+        == {'mapzen/blog': dict(secret='mno', token='pqr'), \
+            'mapzen/style': dict(secret='ghi', token='jkl')}
+    True
     '''
     sites = dict()
-    for site in string.split():
+    for site in ' '.join(strings).split():
         name, secret, token = site.split(':', 2)
         sites[name] = dict(secret=secret, token=token)
     
