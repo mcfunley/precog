@@ -246,21 +246,7 @@ def make_500_response(error, traceback):
 @handle_redirects
 def hello_world():
     id = session.get('id', None)
-    
-    script = '''
-    javascript:(
-        function ()
-        {
-            document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).src='http://host:port/bookmarklet.js';
-        }()
-    );
-    '''
-    
-    script = script.replace('http', request.scheme)
-    script = script.replace('host:port', request.host)
-    script = script.replace(' ', '').replace('\n', '')
-    
-    return render_template('index.html', id=id, script=script, request=request)
+    return render_template('index.html', id=id, request=request)
 
 @app.route('/.well-known/status')
 @errors_logged
@@ -304,18 +290,6 @@ def webhook():
     post_github_status(status_url, status, (token, 'x-oauth-basic'))
     
     return 'Yo.'
-
-@app.route('/bookmarklet.js')
-@errors_logged
-@handle_redirects
-def bookmarklet_script():
-    js = open('scripts/bookmarklet.js').read()
-
-    script = make_response(js.replace('host:port', request.host), 200)
-    script.headers['Content-Type'] = 'text/javascript'
-    script.headers['Cache-Control'] = 'no-store private'
-
-    return script
 
 @app.route('/oauth/callback')
 @errors_logged
