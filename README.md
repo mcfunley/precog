@@ -57,13 +57,13 @@ personal access token to write results back to the Github Status API.
    and Github’s webhook setting, to ensure that only requests from the right
    repository will be acted on.
    
-3. Add or update a configuration setting in  Precog’s environment variables,
-   called `WEBHOOK_CONFIG` and containing space-delimited settings for each
+3. Add or update configuration settings in Precog’s environment variables,
+   each called `WEBHOOK_CONFIG_{something}` and containing settings for each
    repository Precog should listen for:
    
-   ```
-   mapzen/blog:xxy:xyx mapzen/styleguide:xyy:yxx {your repo}:{secret}:{token}
-   ```
+        WEBHOOK_CONFIG_blog: mapzen/blog:xxy:xyx
+        WEBHOOK_CONFIG_style: mapzen/styleguide:xyy:yxx
+        WEBHOOK_CONFIG_yours: {your repo}:{secret}:{token}
    
    Currently, this must be done by talking to Mike.
    
