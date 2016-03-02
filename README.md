@@ -11,6 +11,35 @@ or to your own server. Requires configured and working
 
 Try it live at [precog.mapzen.com](http://precog.mapzen.com).
 
+Basic Usage
+-----------
+
+1.  Add your repo to CircleCI using _Add Projects_ button at https://circleci.com/dashboard.
+    
+2.  Edit `circle.yml` to [generate build artifacts](https://circleci.com/docs/build-artifacts)
+    and help Precog find them:
+    
+    *   Tell CircleCI where to find a directory of statically-built files.
+        For example, Jekyll creates a `_site` folder by default:
+    
+            general:
+              artifacts:
+                - "_site"
+    
+        Precog will look only in the first named directory.
+        Try to include an `index.html`.
+    
+    *   Alternatively, copy all statically-built files to `$CIRCLE_ARTIFACTS`
+        directory after tests are complete:
+    
+            test:
+              override:
+                - make dist
+                - cp -Lr dist $CIRCLE_ARTIFACTS/
+
+To have Precog populate Github pull requests with direct links to previews,
+see _Using Webhooks_ below.
+
 Status, Contact
 ---------------
 
