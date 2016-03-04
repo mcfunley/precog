@@ -1,40 +1,40 @@
 from urlparse import urlparse, urljoin, urlunparse
 from re import match
     
-def get_redirect(req_path, ref_url, slash_count=3):
+def get_redirect(req_part, ref_url, slash_count=3):
     '''
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/baz/')
-    '/foo/bar/baz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/baz/')
+    '/foo/bar/baz/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/baz/quux.html')
-    '/foo/bar/baz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/baz/quux.html')
+    '/foo/bar/baz/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/bar/baz/')
-    '/foo/bar/baz/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/bar/baz/')
+    '/foo/bar/baz/quux/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/br/anch/', 4)
-    '/foo/bar/br/anch/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/', 4)
+    '/foo/bar/br/anch/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/br/anch/quux.html', 4)
-    '/foo/bar/br/anch/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/quux.html', 4)
+    '/foo/bar/br/anch/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/bar/br/anch/', 4)
-    '/foo/bar/br/anch/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/', 4)
+    '/foo/bar/br/anch/quux/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/barbaz/', 2)
-    '/foo/barbaz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/barbaz/', 2)
+    '/foo/barbaz/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/barbaz/quux.html', 2)
-    '/foo/barbaz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/barbaz/quux.html', 2)
+    '/foo/barbaz/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/barbaz/', 2)
-    '/foo/barbaz/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/barbaz/', 2)
+    '/foo/barbaz/quux/style.css?q=Hi'
     '''
     _, _, ref_path, _, _, _ = urlparse(ref_url)
     pattern = r'(?P<preamble>' + (r'/[^/]+' * slash_count) + r')'
     ref_git_preamble_match = match(pattern, ref_path)
     
-    return ref_git_preamble_match.group('preamble') + req_path
+    return ref_git_preamble_match.group('preamble') + req_part
 
 def needs_redirect(req_host, req_path, ref_url, slash_count=3):
     '''
@@ -123,7 +123,7 @@ def absolute_url(request, location):
         return location
     
     scheme = request.headers.get('X-Forwarded-Proto')
-    actual_url = urlunparse((scheme, request.host, request.path, None, None, None))
+    actual_url = urlunparse((scheme, request.host, request.path, request.query_string, None, None))
     return urljoin(actual_url, location)
 
 if __name__ == '__main__':
