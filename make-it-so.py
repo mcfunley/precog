@@ -50,7 +50,8 @@ def make_redirect(slash_count):
     '''
     referer_url = request.headers.get('Referer')
 
-    location = get_redirect(request.path, referer_url, slash_count)
+    request_part = request.path + '?{}'.format(request.query_string).rstrip('?')
+    location = get_redirect(request_part, referer_url, slash_count)
     other = redirect(absolute_url(request, location), 302)
     other.headers['Cache-Control'] = 'no-store private'
     other.headers['Vary'] = 'Referer'

@@ -1,7 +1,7 @@
 from urlparse import urlparse, urljoin, urlunparse
 from re import match
     
-def get_redirect(req_path, ref_url, slash_count=3):
+def get_redirect(req_part, ref_url, slash_count=3):
     '''
     >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/baz/')
     '/foo/bar/baz/style.css?q=Hi'
@@ -34,7 +34,7 @@ def get_redirect(req_path, ref_url, slash_count=3):
     pattern = r'(?P<preamble>' + (r'/[^/]+' * slash_count) + r')'
     ref_git_preamble_match = match(pattern, ref_path)
     
-    return ref_git_preamble_match.group('preamble') + req_path
+    return ref_git_preamble_match.group('preamble') + req_part
 
 def needs_redirect(req_host, req_path, ref_url, slash_count=3):
     '''
@@ -123,7 +123,7 @@ def absolute_url(request, location):
         return location
     
     scheme = request.headers.get('X-Forwarded-Proto')
-    actual_url = urlunparse((scheme, request.host, request.path, None, None, None))
+    actual_url = urlunparse((scheme, request.host, request.path, request.query_string, None, None))
     return urljoin(actual_url, location)
 
 if __name__ == '__main__':
