@@ -78,13 +78,14 @@ Github’s pull request interface:
 This must be enabled separately for each repository, and requires a Github
 personal access token to write results back to the Github Status API.
 
-1. Generate a [personal access token](https://github.com/settings/tokens) and
-   give it a descriptive name like “Precog Status Updates: {repo name}” so
-   you can figure out what it is later. Give it `repo` scope access.
+1. Generate a [personal access token](https://github.com/settings/tokens) that
+   Precog will use to update statuses in your repository. Give it a descriptive
+   name like “Precog Status Updates: {repo name}” so you can figure out what it
+   is later. Give it `repo` scope access.
    
-2. Make a random alphanumeric secret that will be shared between Precog
-   and Github’s webhook setting, to ensure that only requests from the right
-   repository will be acted on.
+2. Make a random alphanumeric secret that will ensure only requests from the right
+   repository will be acted on. [PasswordsGenerator.net](http://passwordsgenerator.net)
+   is a good place to make random secrets.
    
 3. Add or update configuration settings in Precog’s environment variables,
    each called `WEBHOOK_CONFIG_{something}` and containing settings for each
@@ -94,7 +95,7 @@ personal access token to write results back to the Github Status API.
         WEBHOOK_CONFIG_style: mapzen/styleguide:xyy:yxx
         WEBHOOK_CONFIG_yours: {your repo}:{secret}:{token}
    
-   Currently, this must be done by talking to Mike.
+   Currently, this must be done by talking to Lou or Mike.
    
 4. Add a webhook to the Github repository, using the payload URL
    `https://precog.mapzen.com/hook`, the secret from earlier, and the
