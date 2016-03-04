@@ -578,17 +578,19 @@ class TestApp (unittest.TestCase):
         '''
         '''
         with HTTMock(self.response_content):
-            root1 = self.client.get('/projects', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            root1 = self.client.get('/projects?q=Hi', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
             self.assertIn(root1.status_code, (301, 302))
 
             redirect1 = urlparse(root1.headers['Location'])
             self.assertEqual(redirect1.path, '/mapzen/blog/master/projects')
+            self.assertEqual(redirect1.query, 'q=Hi')
 
-            root2 = self.client.get('/projects', headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
+            root2 = self.client.get('/projects?q=Hi', headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
             self.assertIn(root2.status_code, (301, 302))
 
             redirect2 = urlparse(root2.headers['Location'])
             self.assertEqual(redirect2.path, '/mapzen/blog/john/test/projects')
+            self.assertEqual(redirect2.query, 'q=Hi')
 
             root3 = self.client.get('/projects?{}'.format(self.okhand), headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
             self.assertEqual(root3.status_code, 200)
@@ -596,23 +598,26 @@ class TestApp (unittest.TestCase):
             root4 = self.client.get('/projects?{}'.format(self.okhand), headers={'Referer': 'http://localhost/mapzen/blog/john/test/page'})
             self.assertEqual(root4.status_code, 200)
             
-            root5 = self.client.get('/projects/tangram', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            root5 = self.client.get('/projects/tangram?q=Hi', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
             self.assertIn(root5.status_code, (301, 302))
 
             redirect5 = urlparse(root5.headers['Location'])
             self.assertEqual(redirect5.path, '/mapzen/blog/master/projects/tangram')
+            self.assertEqual(redirect5.query, 'q=Hi')
             
-            root6 = self.client.get('/projects/tangram/tron', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            root6 = self.client.get('/projects/tangram/tron?q=Hi', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
             self.assertIn(root6.status_code, (301, 302))
 
             redirect6 = urlparse(root6.headers['Location'])
             self.assertEqual(redirect6.path, '/mapzen/blog/master/projects/tangram/tron')
+            self.assertEqual(redirect6.query, 'q=Hi')
             
-            root7 = self.client.get('/projects/tangram/tron/etc', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
+            root7 = self.client.get('/projects/tangram/tron/etc?q=Hi', headers={'Referer': 'http://localhost/mapzen/blog/master/page'})
             self.assertIn(root7.status_code, (301, 302))
 
             redirect7 = urlparse(root7.headers['Location'])
             self.assertEqual(redirect7.path, '/mapzen/blog/master/projects/tangram/tron/etc')
+            self.assertEqual(redirect7.query, 'q=Hi')
     
     def test_site_index(self):
         '''

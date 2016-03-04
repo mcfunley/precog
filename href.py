@@ -3,32 +3,32 @@ from re import match
     
 def get_redirect(req_path, ref_url, slash_count=3):
     '''
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/baz/')
-    '/foo/bar/baz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/baz/')
+    '/foo/bar/baz/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/baz/quux.html')
-    '/foo/bar/baz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/baz/quux.html')
+    '/foo/bar/baz/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/bar/baz/')
-    '/foo/bar/baz/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/bar/baz/')
+    '/foo/bar/baz/quux/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/br/anch/', 4)
-    '/foo/bar/br/anch/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/', 4)
+    '/foo/bar/br/anch/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/bar/br/anch/quux.html', 4)
-    '/foo/bar/br/anch/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/quux.html', 4)
+    '/foo/bar/br/anch/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/bar/br/anch/', 4)
-    '/foo/bar/br/anch/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/bar/br/anch/', 4)
+    '/foo/bar/br/anch/quux/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/barbaz/', 2)
-    '/foo/barbaz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/barbaz/', 2)
+    '/foo/barbaz/style.css?q=Hi'
 
-    >>> get_redirect('/style.css', 'http://preview.local/foo/barbaz/quux.html', 2)
-    '/foo/barbaz/style.css'
+    >>> get_redirect('/style.css?q=Hi', 'http://preview.local/foo/barbaz/quux.html', 2)
+    '/foo/barbaz/style.css?q=Hi'
 
-    >>> get_redirect('/quux/style.css', 'http://preview.local/foo/barbaz/', 2)
-    '/foo/barbaz/quux/style.css'
+    >>> get_redirect('/quux/style.css?q=Hi', 'http://preview.local/foo/barbaz/', 2)
+    '/foo/barbaz/quux/style.css?q=Hi'
     '''
     _, _, ref_path, _, _, _ = urlparse(ref_url)
     pattern = r'(?P<preamble>' + (r'/[^/]+' * slash_count) + r')'
