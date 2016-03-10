@@ -6,6 +6,7 @@ from urllib import urlencode
 from functools import wraps
 from operator import attrgetter
 from urlparse import urlparse, urljoin
+from mimetypes import guess_type
 from os import environ
 from uuid import uuid4
 from time import time
@@ -426,11 +427,16 @@ def repo_ref_path(account, repo, ref_path):
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
 
     try:
-        artifact_resp = GET(artifact_url, _LONGTIME)
-        if artifact_resp.status_code != 200:
-            raise IOError('Bad response from CircleCI: HTTP {}'.format(artifact_resp.status_code))
-        content = artifact_resp.content
-        mimetype = artifact_resp.headers.get('Content-Type', '')
+        if urlparse(artifact_url).scheme == 'file':
+            mimetype = guess_type(artifact_url)
+            with open(urlparse(artifact_url).path) as file:
+                content = file.read()
+        else:
+            artifact_resp = GET(artifact_url, _LONGTIME)
+            if artifact_resp.status_code != 200:
+                raise IOError('Bad response from CircleCI: HTTP {}'.format(artifact_resp.status_code))
+            content = artifact_resp.content
+            mimetype = artifact_resp.headers.get('Content-Type', '')
     except IOError as err:
         return make_response(render_template('error-runtime.html', error=err), 500)
     

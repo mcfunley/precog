@@ -1,11 +1,15 @@
-from os.path import relpath, join
+from os.path import relpath, join, isdir
+from os import environ, mkdir, walk
+from tempfile import gettempdir
 from urlparse import urlparse
 from logging import getLogger
 from datetime import datetime
 from base64 import b64decode
-from os import environ
+from hashlib import sha1
+from io import BytesIO
 from time import time
 from re import match
+import tarfile
 import json
 
 from dateutil.parser import parse, tz
@@ -33,6 +37,8 @@ _CIRCLECI_ARTIFACTS_URL = 'https://circleci.com/api/v1/project/{build}/artifacts
 
 _LONGTIME = 3600
 _defaultcache = {}
+
+PRECOG_TARBALL_NAME = 'precog-content.tar.gz'
 
 class Getter:
     ''' Wrapper for HTTP GET from requests.
@@ -229,8 +235,44 @@ def get_circle_artifacts(owner, repo, ref, GET):
 
     artifacts_base = find_base_path(owner, repo, ref, GET)
     artifacts_url = _CIRCLECI_ARTIFACTS_URL.format(build=circle_build, token=circle_token)
-    artifacts = {relpath(a['pretty_path'], artifacts_base): '{}?circle-token={}'.format(a['url'], circle_token)
-                 for a in GET(artifacts_url, _LONGTIME).json()}
+    artifacts_list = GET(artifacts_url, _LONGTIME).json()
+
+    return _prepare_artifacts(artifacts_list, artifacts_base, circle_token)
+
+def _prepare_artifacts(list, base, circle_token):
+    '''
+    '''
+    artifacts = {relpath(a['pretty_path'], base): '{}?circle-token={}'.format(a['url'], circle_token)
+                 for a in list}
+    
+    if PRECOG_TARBALL_NAME in artifacts:
+        tarball_artifacts = _make_local_tarball(artifacts[PRECOG_TARBALL_NAME])
+        artifacts, raw_artifacts = tarball_artifacts, artifacts
+        
+        # Files in artifacts override those in tarball
+        artifacts.update(raw_artifacts)
+    
+    return artifacts
+
+def _make_local_tarball(url):
+    '''
+    '''
+    local_path = join(gettempdir(), 'precog-{}'.format(sha1(url).hexdigest()))
+    
+    if not isdir(local_path):
+        response = requests.get(url)
+        tarball = tarfile.open(fileobj=BytesIO(response.content), mode='r:gz')
+        
+        mkdir(local_path)
+        tarball.extractall(local_path)
+        
+    artifacts = dict()
+    
+    for (dirpath, dirnames, filenames) in walk(local_path):
+        for filename in filenames:
+            full_path = join(dirpath, filename)
+            short_path = relpath(full_path, local_path)
+            artifacts[short_path] = 'file://' + full_path
     
     return artifacts
 
