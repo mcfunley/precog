@@ -6,6 +6,7 @@ from urllib import urlencode
 from functools import wraps
 from operator import attrgetter
 from urlparse import urlparse, urljoin
+from mimetypes import guess_type
 from os import environ
 from uuid import uuid4
 from time import time
@@ -427,7 +428,6 @@ def repo_ref_path(account, repo, ref_path):
 
     try:
         if urlparse(artifact_url).scheme == 'file':
-            from mimetypes import guess_type
             mimetype = guess_type(artifact_url)
             with open(urlparse(artifact_url).path) as file:
                 content = file.read()

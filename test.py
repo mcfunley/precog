@@ -1,12 +1,14 @@
 # coding: utf-8
 import doctest
 import unittest
+import tempfile
 import importlib
 from os.path import basename
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl
 from httmock import HTTMock, response
 from mock import patch, Mock
+from shutil import rmtree
 from time import sleep
 import hmac, hashlib
 import json
@@ -28,6 +30,13 @@ class TestGit (unittest.TestCase):
 
     def setUp(self):
         self.GET = git.Getter(tuple(), dict()).get
+        
+        self.old_tempdir = tempfile.tempdir
+        tempfile.tempdir = tempfile.mkdtemp(prefix='TestGit-')
+    
+    def tearDown(self):
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def response_content(self, url, request):
         '''
