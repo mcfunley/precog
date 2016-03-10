@@ -428,7 +428,7 @@ def repo_ref_path(account, repo, ref_path):
 
     try:
         if urlparse(artifact_url).scheme == 'file':
-            mimetype = guess_type(artifact_url)
+            mimetype, _ = guess_type(artifact_url)
             with open(urlparse(artifact_url).path) as file:
                 content = file.read()
         else:
