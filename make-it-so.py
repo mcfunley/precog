@@ -379,10 +379,10 @@ def repo_only_slash(account, repo):
     access_token = get_token().get('access_token')
     GET = Getter((access_token, 'x-oauth-basic')).get
     template_args = dict(account=account, repo=repo)
-    branches = sorted(get_branch_info(account, repo, GET), key=attrgetter('name'))
+    branches = sorted(get_branch_info(account, repo, GET), key=attrgetter('age'), reverse=False)
     
-    if request.args.get('sort') == 'date':
-        branches.sort(key=attrgetter('age'), reverse=False)
+    if request.args.get('sort') == 'name':
+        branches.sort(key=attrgetter('name'))
     
     return render_template('branches.html', branches=branches, **template_args)
 
