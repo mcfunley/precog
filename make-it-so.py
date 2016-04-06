@@ -246,6 +246,11 @@ def make_500_response(error, traceback):
     
     return make_response(render_template('error-runtime.html', **vars), 500)
 
+@app.route('/healthcheck')
+def healthcheck():
+    resp = make_response("OK", 200)
+    return resp
+
 @app.route('/')
 @errors_logged
 @handle_redirects
