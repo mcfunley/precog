@@ -28,11 +28,15 @@ from href import needs_redirect, get_redirect, absolute_url
 from util import errors_logged, nice_relative_time, parse_webhook_config
 
 from git import github_client_id, github_client_secret
+from git import ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
 flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 
 webhook_config = parse_webhook_config(*[val for (key, val) in environ.items()
                                         if key.startswith('WEBHOOK_CONFIG_')
                                         or key == 'WEBHOOK_CONFIG'])
+
+err_codes = dict(NO_REPOSITORY=ERR_NO_REPOSITORY, TESTS_PENDING=ERR_TESTS_PENDING,
+                 TESTS_FAILED=ERR_TESTS_FAILED, NO_REF_STATUS=ERR_NO_REF_STATUS)
 
 app = Flask(__name__)
 if sys.argv[0] != 'test.py':
@@ -224,7 +228,7 @@ def make_401_response():
     data = dict(scope='user,repo', client_id=github_client_id, state=state_id)
     href = 'https://github.com/login/oauth/authorize?' + urlencode(data)
     
-    auth = make_response(render_template('error-authenticate.html', href=href), 401)
+    auth = make_response(render_template('error-authenticate.html', href=href, codes=err_codes), 401)
     auth.headers['X-Redirect'] = href
     
     return auth
@@ -242,7 +246,7 @@ def make_500_response(error, traceback):
     except UnicodeDecodeError:
         message = str(error).decode('latin-1')
     
-    vars = dict(error=message, traceback=traceback)
+    vars = dict(error=message, traceback=traceback, codes=err_codes)
     
     return make_response(render_template('error-runtime.html', **vars), 500)
 
@@ -416,12 +420,13 @@ def repo_ref_path(account, repo, ref_path):
         artifacts = get_circle_artifacts(account, repo, ref, GET)
         artifact_url = artifacts.get(select_path(artifacts, path))
     except RuntimeError as err:
+        vars = dict(error=err, codes=err_codes, git_ref=ref)
         if err.args[0] == ERR_TESTS_PENDING:
-            return make_response(render_template('error-pending.html', error=err, refresh=request.path), 200)
+            return make_response(render_template('error-pending.html', refresh=request.path, **vars), 200)
         elif err.args[0] == ERR_TESTS_FAILED:
-            return make_response(render_template('error-failed.html', error=err), 200)
+            return make_response(render_template('error-failed.html', **vars), 200)
         else:
-            return make_response(render_template('error-runtime.html', error=err), 400)
+            return make_response(render_template('error-runtime.html', **vars), 400)
     
     if artifact_url is None:
         return make_404_response('error-404.html', dict(ref=ref, path=path, **template_args))
@@ -438,7 +443,7 @@ def repo_ref_path(account, repo, ref_path):
             content = artifact_resp.content
             mimetype = artifact_resp.headers.get('Content-Type', '')
     except IOError as err:
-        return make_response(render_template('error-runtime.html', error=err), 500)
+        return make_response(render_template('error-runtime.html', error=err, codes=err_codes), 500)
     
     return Response(content, headers={'Content-Type': mimetype, 'Cache-Control': 'no-store private'})
 

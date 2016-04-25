@@ -8,5 +8,13 @@
     </p>
     
     <pre>{{error.args[0]}}</pre>
+    
+    {% if error.args[0] == codes.NO_REF_STATUS %}
+        <p>
+            This might mean that Circle CI tests were not run, and no
+            <a href="https://developer.github.com/v3/repos/statuses/">commit status</a>
+            for the ref <q>{{git_ref}}</q> was created.
+        </p>
+    {% endif %}
 
 {% endblock %}
