@@ -201,6 +201,11 @@ class TestGit (unittest.TestCase):
             self.assertFalse(git.repo_exists('migurski', 'no-repo', self.GET))
             self.assertTrue(git.repo_exists('migurski', 'circlejek', self.GET))
     
+    def test_renamed_repo(self):
+        with HTTMock(self.response_content):
+            with self.assertRaises(RuntimeError) as error:
+                self.assertTrue(git.repo_exists('migurski', 'test-this', self.GET))
+    
     def test_split_branch_path(self):
         with HTTMock(self.response_content):
             self.assertEqual(git.split_branch_path('mapzen', 'blog', 'drew/dc-transit-events-2016/blog/mapzen-in-dc', self.GET), ('drew/dc-transit-events-2016', 'blog/mapzen-in-dc'))
@@ -663,6 +668,13 @@ class TestApp (unittest.TestCase):
             index = self.client.get('/mapzen/blog/master/')
             self.assertEqual(index.status_code, 200)
             self.assertIn('Mapzen', index.data)
+    
+    def test_site_redirected(self):
+        '''
+        '''
+        with HTTMock(self.response_content):
+            index = self.client.get('/mapzen/blog/master/')
+            self.assertEqual(index.status_code, 302)
     
     def test_circle_pending(self):
         '''
