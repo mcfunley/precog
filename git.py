@@ -85,7 +85,13 @@ def repo_exists(owner, repo, GET):
     repo_url = _GITHUB_REPO_URL.format(owner=owner, repo=repo)
     repo_resp = GET(repo_url)
     
-    return bool(repo_resp.status_code == 200)
+    if repo_resp.status_code != 200:
+        return False
+    
+    if repo_resp.json()['full_name'] != '{}/{}'.format(owner, repo):
+        raise RuntimeError('FUCK')
+    
+    return True
 
 def split_branch_path(owner, repo, path, GET):
     ''' Return existing branch name and remaining path for a given path.
