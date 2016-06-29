@@ -18,6 +18,8 @@ from uritemplate import expand as expand_uri
 import requests
 import yaml
 
+from util import extend_querystring
+
 github_client_id = environ.get('GITHUB_CLIENT_ID') or r'e62e0d541bb6d0125b62'
 github_client_secret = environ.get('GITHUB_CLIENT_SECRET') or r'1f488407e92a59beb897814e9240b5a06a2020e3'
 
@@ -63,7 +65,7 @@ class Getter:
         
         host = urlparse(url).hostname
         is_github = (host == 'api.github.com')
-        is_noauth = (self.github_auth[0] == FAKE_TOKEN)
+        is_noauth = (self.github_auth and self.github_auth[0] == FAKE_TOKEN)
         
         auth = self.github_auth if is_github else None
         key = (url, auth)
@@ -75,7 +77,8 @@ class Getter:
             if is_noauth:
                 # https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
                 auth = None
-                url += '?client_id={}&client_secret={}'.format(github_client_id, github_client_secret)
+                args = dict(client_id=github_client_id, client_secret=github_client_secret)
+                url = extend_querystring(url, args)
         
             getLogger('precog').warning('GET {}'.format(url))
 

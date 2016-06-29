@@ -5,6 +5,8 @@ from traceback import format_exc
 from datetime import timedelta
 from logging import getLogger
 from functools import wraps
+from urllib import urlencode
+from urlparse import urlparse, urlunparse, parse_qsl
 
 from flask import Response
 
@@ -123,6 +125,32 @@ def parse_webhook_config(*strings):
         sites[name] = dict(secret=secret, token=token)
     
     return sites
+
+def extend_querystring(url, new_args):
+    '''
+    >>> extend_querystring('http://example.com/path', dict())
+    'http://example.com/path'
+
+    >>> extend_querystring('http://example.com/path', dict(foo='bar'))
+    'http://example.com/path?foo=bar'
+
+    >>> extend_querystring('http://example.com/path?foo=bar', dict())
+    'http://example.com/path?foo=bar'
+
+    >>> extend_querystring('http://example.com/path?foo=bar', dict(foo='new'))
+    'http://example.com/path?foo=new'
+
+    >>> 'foo=bar' in extend_querystring('http://example.com/path?foo=bar', dict(doo='new'))
+    True
+
+    >>> 'doo=new' in extend_querystring('http://example.com/path?foo=bar', dict(doo='new'))
+    True
+    '''
+    scheme, host, path, params, query, frag = urlparse(url)
+    query_dict = dict(parse_qsl(query))
+    query_dict.update(new_args)
+    
+    return urlunparse((scheme, host, path, params, urlencode(query_dict), frag))
 
 if __name__ == '__main__':
     import doctest
