@@ -21,6 +21,8 @@ import yaml
 github_client_id = environ.get('GITHUB_CLIENT_ID') or r'e62e0d541bb6d0125b62'
 github_client_secret = environ.get('GITHUB_CLIENT_SECRET') or r'1f488407e92a59beb897814e9240b5a06a2020e3'
 
+FAKE_TOKEN = '<fake token, will fail>'
+
 ERR_NO_REPOSITORY = 'Missing repository'
 ERR_TESTS_PENDING = 'Test in progress'
 ERR_TESTS_FAILED = 'Test failed'
@@ -65,6 +67,11 @@ class Getter:
             return self.responses[key][0]
         
         if host == 'api.github.com':
+            if auth[0] == FAKE_TOKEN:
+                # https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+                auth = None
+                url += '?client_id={}&client_secret={}'.format(github_client_id, github_client_secret)
+        
             getLogger('precog').warning('GET {}'.format(url))
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)

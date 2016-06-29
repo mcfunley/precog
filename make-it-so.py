@@ -27,7 +27,7 @@ from git import (
 from href import needs_redirect, get_redirect, absolute_url
 from util import errors_logged, nice_relative_time, parse_webhook_config
 
-from git import github_client_id, github_client_secret
+from git import github_client_id, github_client_secret, FAKE_TOKEN
 from git import ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
 flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 
@@ -209,7 +209,7 @@ def enforce_signature(route_function):
 def get_token():
     ''' Get OAuth token from flask.session, or a fake one guaranteed to fail.
     '''
-    token = dict(token_type='bearer', access_token='<fake token, will fail>')
+    token = dict(token_type='bearer', access_token=FAKE_TOKEN)
     token.update(session.get('token', {}))
     
     return token
@@ -366,7 +366,7 @@ def logout():
 
 @app.route('/<account>/<repo>')
 @errors_logged
-@handle_authentication
+#@handle_authentication
 @handle_redirects
 def repo_only(account, repo):
     ''' Add a slash.
@@ -375,7 +375,7 @@ def repo_only(account, repo):
 
 @app.route('/<account>/<repo>/')
 @errors_logged
-@handle_authentication
+#@handle_authentication
 @handle_redirects
 def repo_only_slash(account, repo):
     ''' Show a list of branch names.
@@ -392,7 +392,7 @@ def repo_only_slash(account, repo):
 
 @app.route('/<account>/<repo>/<ref>')
 @errors_logged
-@handle_authentication
+#@handle_authentication
 @handle_redirects
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
@@ -401,7 +401,7 @@ def repo_ref(account, repo, ref):
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
-@handle_authentication
+#@handle_authentication
 @handle_redirects
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
