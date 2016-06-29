@@ -300,11 +300,26 @@ class TestApp (unittest.TestCase):
         webhook_configs = 'blah:blah:blah', 'openaddresses/hooked-on-sources:hos-secret:abracadabra'
         app.config['HOOK_SECRETS_TOKENS'] = util.parse_webhook_config(*webhook_configs)
     
+    @staticmethod
+    def scrub_query(url):
+        '''
+        '''
+        if url.hostname != 'api.github.com':
+            return url.query
+
+        raw_query = dict(parse_qsl(url.query))
+        args = {k: v for (k, v) in raw_query.items()
+                if k not in ('client_id', 'client_secret')}
+
+        return urlencode(args)
+    
     def response_content(self, url, request):
         '''
         '''
+        clean_query = TestApp.scrub_query(url)
+        
         MHP = request.method, url.hostname, url.path
-        MHPQ = request.method, url.hostname, url.path, url.query
+        MHPQ = request.method, url.hostname, url.path, clean_query
         GH, CC = 'api.github.com', 'circleci.com'
         response_headers = {'Content-Type': 'application/json; charset=utf-8'}
 
