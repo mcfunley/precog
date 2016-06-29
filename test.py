@@ -531,6 +531,14 @@ class TestApp (unittest.TestCase):
             MHP = request.method, url.hostname, url.path
             response_headers = {'Content-Type': 'application/json; charset=utf-8'}
 
+            if MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/commits/master') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/master') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads/master/') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog/git/refs/heads') \
+            or MHP == ('GET', 'api.github.com', '/repos/mapzen/blog'):
+                data = u'''{\r  "message": "Not Found",\r  "documentation_url": "https://developer.github.com/v3"\r}'''
+                return response(404, data.encode('utf8'), headers=response_headers)
+
             if MHP == ('POST', 'github.com', '/login/oauth/access_token'):
                 form = dict(parse_qsl(request.body))
                 if form['code'] == 'let-me-in':
