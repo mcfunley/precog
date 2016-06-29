@@ -388,7 +388,7 @@ def repo_only_slash(account, repo):
     ''' Show a list of branch names.
     '''
     access_token = get_token().get('access_token')
-    GET = Getter((access_token, 'x-oauth-basic')).get
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
     template_args = dict(account=account, repo=repo)
     branches = sorted(get_branch_info(account, repo, GET), key=attrgetter('age'), reverse=False)
     
@@ -412,7 +412,7 @@ def repo_ref(account, repo, ref):
 @handle_redirects
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
-    GET = Getter((access_token, 'x-oauth-basic')).get
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
     template_args = dict(account=account, repo=repo)
     
     if not repo_exists(account, repo, GET):

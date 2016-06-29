@@ -49,9 +49,10 @@ class GithubDisallowed (RuntimeError): pass
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
-    def __init__(self, github_auth, cache=_defaultcache):
+    def __init__(self, github_auth, cache=_defaultcache, throws4XX=False):
         self.github_auth = github_auth
         self.responses = cache
+        self.throws4XX = throws4XX
     
     def _flush(self):
         ''' Flush past-deadline responses.
@@ -84,7 +85,7 @@ class Getter:
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
-        if is_github and is_noauth and resp.status_code in range(400, 499):
+        if is_github and is_noauth and self.throws4XX and resp.status_code in range(400, 499):
             raise GithubDisallowed('Got {} response from Github API'.format(resp.status_code))
         
         self.responses[key] = (resp, time() + lifespan)
