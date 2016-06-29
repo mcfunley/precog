@@ -378,7 +378,9 @@ def logout():
 def repo_only(account, repo):
     ''' Add a slash.
     '''
-    return u'¯\_(ツ)_/¯'
+    access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
+    return str(repo_exists(account, repo, GET))
 
 @app.route('/<account>/<repo>/')
 @errors_logged
@@ -404,7 +406,9 @@ def repo_only_slash(account, repo):
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
     '''
-    return u'¯\_(ツ)_/¯'
+    access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
+    return str(repo_exists(account, repo, GET))
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged

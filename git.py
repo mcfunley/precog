@@ -72,7 +72,10 @@ class Getter:
         key = (url, auth)
 
         if key in self.responses:
-            return self.responses[key][0]
+            c_resp = self.responses[key][0]
+            if is_github and is_noauth and self.throws4XX and c_resp.status_code in range(400, 499):
+                raise GithubDisallowed('Got {} response from Github API'.format(c_resp.status_code))
+            return c_resp
         
         if is_github:
             if is_noauth:
@@ -85,10 +88,11 @@ class Getter:
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
+        self.responses[key] = (resp, time() + lifespan)
+
         if is_github and is_noauth and self.throws4XX and resp.status_code in range(400, 499):
             raise GithubDisallowed('Got {} response from Github API'.format(resp.status_code))
         
-        self.responses[key] = (resp, time() + lifespan)
         return resp
 
 def is_authenticated(GET):
