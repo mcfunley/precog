@@ -42,6 +42,8 @@ _defaultcache = {}
 
 PRECOG_TARBALL_NAME = 'precog-content.tar.gz'
 
+class GithubDisallowed (RuntimeError): pass
+
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
@@ -60,14 +62,17 @@ class Getter:
         self._flush()
         
         host = urlparse(url).hostname
-        auth = self.github_auth if (host == 'api.github.com') else None
-        key = (url, auth)
+        is_github = (host == 'api.github.com')
+        is_noauth = (self.github_auth[0] == FAKE_TOKEN)
         
+        auth = self.github_auth if is_github else None
+        key = (url, auth)
+
         if key in self.responses:
             return self.responses[key][0]
         
-        if host == 'api.github.com':
-            if auth[0] == FAKE_TOKEN:
+        if is_github:
+            if is_noauth:
                 # https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
                 auth = None
                 url += '?client_id={}&client_secret={}'.format(github_client_id, github_client_secret)
@@ -75,6 +80,9 @@ class Getter:
             getLogger('precog').warning('GET {}'.format(url))
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
+        
+        if is_github and is_noauth and resp.status_code in range(400, 499):
+            raise GithubDisallowed('Got {} response from Github API'.format(resp.status_code))
         
         self.responses[key] = (resp, time() + lifespan)
         return resp
