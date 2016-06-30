@@ -27,7 +27,7 @@ from git import (
 from href import needs_redirect, get_redirect, absolute_url
 from util import errors_logged, nice_relative_time, parse_webhook_config
 
-from git import github_client_id, github_client_secret
+from git import github_client_id, github_client_secret, FAKE_TOKEN, GithubDisallowed
 from git import ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
 flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 
@@ -148,6 +148,13 @@ def handle_authentication(untouched_route):
     def wrapper(account, repo, *args, **kwargs):
         ''' Prompt user to authenticate with Github if necessary.
         '''
+        try:
+            response = untouched_route(account, repo, *args, **kwargs)
+        except GithubDisallowed:
+            return make_401_response()
+        else:
+            return response
+
         access_token = get_token().get('access_token')
         GET = Getter((access_token, 'x-oauth-basic')).get
     
@@ -209,7 +216,7 @@ def enforce_signature(route_function):
 def get_token():
     ''' Get OAuth token from flask.session, or a fake one guaranteed to fail.
     '''
-    token = dict(token_type='bearer', access_token='<fake token, will fail>')
+    token = dict(token_type='bearer', access_token=FAKE_TOKEN)
     token.update(session.get('token', {}))
     
     return token
@@ -371,7 +378,9 @@ def logout():
 def repo_only(account, repo):
     ''' Add a slash.
     '''
-    return u'¯\_(ツ)_/¯'
+    access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
+    return str(repo_exists(account, repo, GET))
 
 @app.route('/<account>/<repo>/')
 @errors_logged
@@ -381,7 +390,7 @@ def repo_only_slash(account, repo):
     ''' Show a list of branch names.
     '''
     access_token = get_token().get('access_token')
-    GET = Getter((access_token, 'x-oauth-basic')).get
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
     template_args = dict(account=account, repo=repo)
     branches = sorted(get_branch_info(account, repo, GET), key=attrgetter('age'), reverse=False)
     
@@ -397,7 +406,9 @@ def repo_only_slash(account, repo):
 def repo_ref(account, repo, ref):
     ''' Redirect to add trailing slash.
     '''
-    return u'¯\_(ツ)_/¯'
+    access_token = get_token().get('access_token')
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
+    return str(repo_exists(account, repo, GET))
 
 @app.route('/<account>/<repo>/<path:ref_path>')
 @errors_logged
@@ -405,7 +416,7 @@ def repo_ref(account, repo, ref):
 @handle_redirects
 def repo_ref_path(account, repo, ref_path):
     access_token = get_token().get('access_token')
-    GET = Getter((access_token, 'x-oauth-basic')).get
+    GET = Getter((access_token, 'x-oauth-basic'), throws4XX=True).get
     template_args = dict(account=account, repo=repo)
     
     if not repo_exists(account, repo, GET):

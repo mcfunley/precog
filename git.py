@@ -18,8 +18,12 @@ from uritemplate import expand as expand_uri
 import requests
 import yaml
 
+from util import extend_querystring
+
 github_client_id = environ.get('GITHUB_CLIENT_ID') or r'e62e0d541bb6d0125b62'
 github_client_secret = environ.get('GITHUB_CLIENT_SECRET') or r'1f488407e92a59beb897814e9240b5a06a2020e3'
+
+FAKE_TOKEN = '<fake token, will fail>'
 
 ERR_NO_REPOSITORY = 'Missing repository'
 ERR_TESTS_PENDING = 'Test in progress'
@@ -40,12 +44,15 @@ _defaultcache = {}
 
 PRECOG_TARBALL_NAME = 'precog-content.tar.gz'
 
+class GithubDisallowed (RuntimeError): pass
+
 class Getter:
     ''' Wrapper for HTTP GET from requests.
     '''
-    def __init__(self, github_auth, cache=_defaultcache):
+    def __init__(self, github_auth, cache=_defaultcache, throws4XX=False):
         self.github_auth = github_auth
         self.responses = cache
+        self.throws4XX = throws4XX
     
     def _flush(self):
         ''' Flush past-deadline responses.
@@ -58,18 +65,34 @@ class Getter:
         self._flush()
         
         host = urlparse(url).hostname
-        auth = self.github_auth if (host == 'api.github.com') else None
+        is_github = (host == 'api.github.com')
+        is_noauth = (self.github_auth and self.github_auth[0] == FAKE_TOKEN)
+        
+        auth = self.github_auth if is_github else None
         key = (url, auth)
-        
+
         if key in self.responses:
-            return self.responses[key][0]
+            c_resp = self.responses[key][0]
+            if is_github and is_noauth and self.throws4XX and c_resp.status_code in range(400, 499):
+                raise GithubDisallowed('Got {} response from Github API'.format(c_resp.status_code))
+            return c_resp
         
-        if host == 'api.github.com':
+        if is_github:
+            if is_noauth:
+                # https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+                auth = None
+                args = dict(client_id=github_client_id, client_secret=github_client_secret)
+                url = extend_querystring(url, args)
+        
             getLogger('precog').warning('GET {}'.format(url))
 
         resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
         
         self.responses[key] = (resp, time() + lifespan)
+
+        if is_github and is_noauth and self.throws4XX and resp.status_code in range(400, 499):
+            raise GithubDisallowed('Got {} response from Github API'.format(resp.status_code))
+        
         return resp
 
 def is_authenticated(GET):
