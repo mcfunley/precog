@@ -18,8 +18,10 @@ from uritemplate import expand as expand_uri
 import requests
 import yaml
 
-from util import extend_querystring
-from util import ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
+from util import (
+    extend_querystring,
+    ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
+    )
 
 github_client_id = environ.get('GITHUB_CLIENT_ID') or r'e62e0d541bb6d0125b62'
 github_client_secret = environ.get('GITHUB_CLIENT_SECRET') or r'1f488407e92a59beb897814e9240b5a06a2020e3'
