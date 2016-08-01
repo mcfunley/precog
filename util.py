@@ -8,9 +8,18 @@ from functools import wraps
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qsl
 
-from flask import Response
+from flask import make_response, Response, render_template
+from requests.exceptions import ConnectionError
 
 jlogger = getLogger('precog')
+
+ERR_NO_REPOSITORY = 'Missing repository'
+ERR_TESTS_PENDING = 'Test in progress'
+ERR_TESTS_FAILED = 'Test failed'
+ERR_NO_REF_STATUS = 'Missing statuses for ref'
+
+err_codes = dict(NO_REPOSITORY=ERR_NO_REPOSITORY, TESTS_PENDING=ERR_TESTS_PENDING,
+                 TESTS_FAILED=ERR_TESTS_FAILED, NO_REF_STATUS=ERR_NO_REF_STATUS)
 
 @contextmanager
 def locked_file(path):
@@ -37,7 +46,11 @@ def errors_logged(route_function):
     def wrapper(*args, **kwargs):
         try:
             result = route_function(*args, **kwargs)
-        except Exception, e:
+        except ConnectionError as error:
+            jlogger.error(format_exc())
+            kwargs = dict(codes=err_codes, error=Exception('An upstream connection to Github or CircleCI failed'))
+            return make_response(render_template('error-runtime.html', **kwargs), 500)
+        except Exception as e:
             jlogger.error(format_exc())
             raise
             return Response('Nope.', headers={'Content-Type': 'text/plain'}, status=500)
