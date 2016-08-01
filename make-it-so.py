@@ -25,7 +25,7 @@ from git import (
     skip_webhook_payload, get_webhook_commit_info, post_github_status
     )
 from href import needs_redirect, get_redirect, absolute_url
-from util import errors_logged, nice_relative_time, parse_webhook_config
+from util import errors_logged, nice_relative_time, parse_webhook_config, err_codes
 
 from git import github_client_id, github_client_secret, FAKE_TOKEN, GithubDisallowed
 from git import ERR_NO_REPOSITORY, ERR_TESTS_PENDING, ERR_TESTS_FAILED, ERR_NO_REF_STATUS
@@ -34,9 +34,6 @@ flask_secret_key = environ.get('FLASK_SECRET') or 'poop'
 webhook_config = parse_webhook_config(*[val for (key, val) in environ.items()
                                         if key.startswith('WEBHOOK_CONFIG_')
                                         or key == 'WEBHOOK_CONFIG'])
-
-err_codes = dict(NO_REPOSITORY=ERR_NO_REPOSITORY, TESTS_PENDING=ERR_TESTS_PENDING,
-                 TESTS_FAILED=ERR_TESTS_FAILED, NO_REF_STATUS=ERR_NO_REF_STATUS)
 
 app = Flask(__name__)
 if sys.argv[0] != 'test.py':
