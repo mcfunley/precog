@@ -9,7 +9,7 @@ from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qsl
 
 from flask import make_response, Response, render_template
-from requests.exceptions import ConnectionError
+from requests.exceptions import RequestException, ReadTimeout
 
 jlogger = getLogger('precog')
 
@@ -46,9 +46,11 @@ def errors_logged(route_function):
     def wrapper(*args, **kwargs):
         try:
             result = route_function(*args, **kwargs)
-        except ConnectionError as error:
+        except RequestException as error:
             jlogger.error(format_exc())
-            kwargs = dict(codes=err_codes, error=Exception('An upstream connection to Github or CircleCI failed'))
+            hostname = urlparse(error.request.url).netloc
+            message = 'An upstream connection to {} failed'.format(hostname)
+            kwargs = dict(codes=err_codes, error=Exception(message))
             return make_response(render_template('error-runtime.html', **kwargs), 500)
         except Exception as e:
             jlogger.error(format_exc())
