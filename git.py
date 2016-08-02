@@ -59,7 +59,7 @@ class Getter:
             if (time() > d):
                 self.responses.pop(k)
     
-    def get(self, url, lifespan=5):
+    def get(self, url, lifespan=5, timeout=2):
         self._flush()
         
         host = urlparse(url).hostname
@@ -84,7 +84,7 @@ class Getter:
         
             getLogger('precog').warning('GET {}'.format(url))
 
-        resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=2)
+        resp = requests.get(url, auth=auth, headers=dict(Accept='application/json'), timeout=timeout)
         
         self.responses[key] = (resp, time() + lifespan)
 
@@ -256,7 +256,7 @@ def get_circle_artifacts(owner, repo, ref, GET):
 
     artifacts_base = find_base_path(owner, repo, ref, GET)
     artifacts_url = _CIRCLECI_ARTIFACTS_URL.format(build=circle_build, token=circle_token)
-    artifacts_list = GET(artifacts_url, _LONGTIME).json()
+    artifacts_list = GET(artifacts_url, _LONGTIME, timeout=10).json()
 
     return _prepare_artifacts(artifacts_list, artifacts_base, circle_token)
 

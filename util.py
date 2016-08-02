@@ -48,6 +48,7 @@ def errors_logged(route_function):
             result = route_function(*args, **kwargs)
         except RequestException as error:
             jlogger.error(format_exc())
+            jlogger.error('Failed to {} {}'.format(error.request.method, error.request.url))
             hostname = urlparse(error.request.url).netloc
             message = 'An upstream connection to {} failed'.format(hostname)
             kwargs = dict(codes=err_codes, error=Exception(message))
