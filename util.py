@@ -44,23 +44,26 @@ def locked_file(path):
 def errors_logged(route_function):
     '''
     '''
+    def report(args, kwargs):
+        if 'SENTRY_DSN' in environ:
+            client = raven.Client(environ['SENTRY_DSN'])
+            client.user_context({'args': args, 'kwargs': kwargs})
+            client.captureException()
+        jlogger.error(format_exc())
+    
     @wraps(route_function)
     def wrapper(*args, **kwargs):
         try:
             result = route_function(*args, **kwargs)
         except RequestException as error:
-            jlogger.error(format_exc())
+            report(args, kwargs)
             jlogger.error('Failed to {} {}'.format(error.request.method, error.request.url))
             hostname = urlparse(error.request.url).netloc
             message = 'An upstream connection to {} failed'.format(hostname)
             kwargs = dict(codes=err_codes, error=Exception(message))
             return make_response(render_template('error-runtime.html', **kwargs), 500)
         except Exception as e:
-            if 'SENTRY_DSN' in environ:
-                client = raven.Client(environ['SENTRY_DSN'])
-                client.user_context({'args': args, 'kwargs': kwargs, 'route_function': route_function})
-                client.captureException()
-            jlogger.error(format_exc())
+            report(args, kwargs)
             raise
             return Response('Nope.', headers={'Content-Type': 'text/plain'}, status=500)
         else:
