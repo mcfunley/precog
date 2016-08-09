@@ -7,9 +7,11 @@ from logging import getLogger
 from functools import wraps
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qsl
+from os import environ
 
 from flask import make_response, Response, render_template
 from requests.exceptions import RequestException, ReadTimeout
+import raven
 
 jlogger = getLogger('precog')
 
@@ -54,6 +56,10 @@ def errors_logged(route_function):
             kwargs = dict(codes=err_codes, error=Exception(message))
             return make_response(render_template('error-runtime.html', **kwargs), 500)
         except Exception as e:
+            if 'SENTRY_DSN' in environ:
+                client = raven.Client(environ['SENTRY_DSN'])
+                client.user_context({'args': args, 'kwargs': kwargs, 'route_function': route_function})
+                client.captureException()
             jlogger.error(format_exc())
             raise
             return Response('Nope.', headers={'Content-Type': 'text/plain'}, status=500)
