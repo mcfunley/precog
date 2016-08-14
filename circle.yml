@@ -14,5 +14,4 @@ deployment:
     commands:
       - docker build -t precog .
       - docker save -o precog.tar precog
-      - export URL=$(curl -s -u ":3638fe77-ad17-4dfb-acde-29a7e1a57003" -X POST https://www.skyliner.io/images/docker/$CIRCLE_SHA1)
-      - curl --upload-file precog.tar $URL
+      - curl --upload-file precog.tar $(curl -s -u ":3638fe77-ad17-4dfb-acde-29a7e1a57003" -X POST https://www.skyliner.io/images/docker/$CIRCLE_SHA1)
