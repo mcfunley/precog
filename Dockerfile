@@ -1,4 +1,4 @@
-FROM python:2.7.10
+FROM python:2.7.12-alpine
 ADD . .
 RUN pip install -r ./requirements.txt
 ENV PYTHONUNBUFFERED 1
